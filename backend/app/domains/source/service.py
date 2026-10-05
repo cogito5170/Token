@@ -198,6 +198,14 @@ class SourceService:
             u.job_id = self.enqueue(uid)
         return u
 
+    def get_upload(self, upload_id: str) -> dict:
+        """Metadata other domains may read (no storage path)."""
+        u = self.store.upload(upload_id) if _valid_uuid(upload_id) else None
+        if u is None or u.purged_at is not None:
+            raise SourceError("not_found", "upload not found", 404)
+        return {"workspace_id": u.workspace_id, "source_id": u.source_id, "declared_format": u.declared_format,
+                "filename": u.filename}
+
     def open_upload(self, upload_id: str) -> BinaryIO:
         u = self.store.upload(upload_id) if _valid_uuid(upload_id) else None
         if u is None or u.purged_at is not None:

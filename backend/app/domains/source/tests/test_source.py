@@ -152,3 +152,24 @@ class HttpTest(Base):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class GetUploadTest(Base):
+    def test_get_upload_metadata_only_and_404_when_missing(self):
+        u = self.svc.create_upload(WS, U1, self.src.id, "log.jsonl", io.BytesIO(b"hi"), "ga_l0")
+        self.assertEqual(self.svc.get_upload(u.id), {"workspace_id": WS, "source_id": self.src.id,
+                                                      "declared_format": "ga_l0", "filename": "log.jsonl"})
+        with self.assertRaises(SourceError) as c:
+            self.svc.get_upload("00000000-0000-4000-8000-0000000000ff")
+        self.assertEqual(c.exception.status, 404)
+
+
+class WiringTest(unittest.TestCase):
+    def test_default_enqueuer_is_ingestion_api(self):
+        from unittest import mock
+
+        from app.domains.source import wiring
+
+        with mock.patch("app.domains.ingestion.api.enqueue", return_value="job-1") as m:
+            self.assertEqual(wiring._default_enqueue("u1"), "job-1")
+        m.assert_called_once_with("u1")
