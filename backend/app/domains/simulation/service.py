@@ -26,6 +26,7 @@ CTX_QUALITY_PERMILLE = (-200, -100, 0)  # FINAL_TASK bulk vs selective: no diffe
 CTX_HIGH_SAVING_DIV = 2                 # p90 keeps half of the p50 saving (caps lose context that must be re-read)
 MIN_EVIDENCE = 3                        # fewer tasks than this widen the range (consulting.md 1.2 step 6)
 WIDEN = (500, 2000)                     # permille factors applied to the low / high side when evidence is thin
+PROPOSAL_KIND = {"context_cap": "context_cap", "model_swap": "router_tier", "cache_prefix_fixed": "template"}
 Z90 = 1.2815515655446004                # normal quantile for P10 / P90 of the Beta approximation
 
 
@@ -179,14 +180,16 @@ class SimulationService:
             raise SimulationError("not_found", "simulation not found", 404)
         return sim
 
-    def to_proposal(self, ws: str, sim_id: str) -> dict:
+    def to_proposal(self, ws: str, sim_id: str, actor: str | None = None) -> dict:
         sim = self.get(ws, sim_id)
         if self.proposer is None:
             raise SimulationError("advisor_unavailable", "advisor.submit_proposal is not available", 503)
-        change = {"kind": "simulation", "assumptions": sim["assumptions"]}
-        evidence = {"simulation_id": sim["id"], "basis": sim["basis"], "result": sim["result"]["simulated"],
-                    "provenance": "SIMULATED"}
-        p = self.proposer(ws, "simulation", change, evidence)
+        kinds = {a["kind"] for a in sim["assumptions"]}
+        kind = PROPOSAL_KIND.get(next(iter(kinds)), "config_export") if len(kinds) == 1 else "config_export"
+        change = {"assumptions": sim["assumptions"], "simulation_id": sim["id"], "basis": sim["basis"],
+                  "result": sim["result"]["simulated"], "provenance": "SIMULATED"}
+        saving = sim["result"]["simulated"]["saving_microusd"]["p50"]
+        p = self.proposer(ws, "simulation", sim["id"], kind, change, max(0, saving), actor)
         return {"simulation_id": sim["id"], "proposal_id": str(p["id"] if isinstance(p, dict) else getattr(p, "id"))}
 
     # -- assumptions: each returns ((low, mid, high) nano delta, note, quality range | None) -------------------------

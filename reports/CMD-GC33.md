@@ -14,7 +14,7 @@
 simulation 24 (1 skip: fastapi 없음), make check 0 problems, make test OK. 변이(swap 가격 무시)로 3 실패 확인.
 
 ## 열린 문제 / baseline 요청
-1. **advisor.api.submit_proposal 연결**: `simulation/wiring.py::_advisor_proposer` 가 import 로 찾는다(없으면 to_proposal 503). 시그니처 `(ws, origin, change, evidence)` 가정(profile 과 동일). 호출 change = {kind:"simulation", assumptions}.
+1. advisor.api.submit_proposal(ws, origin, origin_ref, kind, change, expected_savings, actor) 에 맞춰 연결 완료(GC30 병합 후 시그니처 확인). wiring 은 import 로 찾는다.
 2. **usage.api.prices()** 필요: {model:{version,in,out,cr,cw5}} (micro-USD/Mtok). 지금은 없어 `_prices` 가 {} → simulate 503. 또 usage.api.calls 에 `prompt_prefix_hash` 가 없어 cache_prefix_fixed 는 "같은 세션 300 초 이내" 로 근사. cache_write 1h 구분도 없어 5m 가격 적용.
 3. `app/main.py` 에 simulation router 등록(core-backend).
 4. `rlo.ctxbudget.simulate` 는 이 환경에 없어 실제 반환 형태 미확인: `saved_pct`(퍼센트, dict 또는 속성) 가정, 인자 soft=hard=cap, reset_to=cap/2 는 추정. 설치 후 확인 필요.

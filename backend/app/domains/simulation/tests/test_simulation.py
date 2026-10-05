@@ -245,10 +245,12 @@ class ProposalTest(unittest.TestCase):
         svc = make([call(1)], proposer=lambda *a: got.append(a) or {"id": "p-1"})
         s = sim(svc, {"kind": "context_cap", "value": 4000})
         self.assertEqual(svc.to_proposal(WS, s["id"]), {"simulation_id": s["id"], "proposal_id": "p-1"})
-        ws, origin, change, evidence = got[0]
-        self.assertEqual((ws, origin, evidence["provenance"]), (WS, "simulation", "SIMULATED"))
+        ws, origin, ref, kind, change, savings, actor = got[0]
+        self.assertEqual((ws, origin, ref, kind, change["provenance"]), (WS, "simulation", s["id"], "context_cap",
+                                                                         "SIMULATED"))
         self.assertEqual(change["assumptions"], s["assumptions"])
-        self.assertEqual(evidence["basis"], s["basis"])
+        self.assertEqual(change["basis"], s["basis"])
+        self.assertEqual(savings, max(0, s["result"]["simulated"]["saving_microusd"]["p50"]))
 
     def test_without_advisor_503_and_unknown_simulation_404(self):
         svc = make([call(1)])

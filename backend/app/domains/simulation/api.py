@@ -16,5 +16,5 @@ def get(ws, sim_id) -> dict:
     return get_service().get(ws, sim_id)
 
 
-def to_proposal(ws, sim_id) -> dict:
-    return get_service().to_proposal(ws, sim_id)
+def to_proposal(ws, sim_id, actor=None) -> dict:
+    return get_service().to_proposal(ws, sim_id, actor)
