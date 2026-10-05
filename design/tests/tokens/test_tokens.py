@@ -87,7 +87,7 @@ class TokenTests(unittest.TestCase):
         self.assertEqual(len(set(chips)), 4)
         self.assertIn("Plex Sans KR", TOK["font"]["sans"])
         self.assertIn("Plex Mono", TOK["font"]["mono"])
-        self.assertEqual(set(TOK["motion"]["duration_ms"]), {"instant", "fast", "base", "slow", "breath"})
+        self.assertEqual(set(TOK["motion"]["duration_ms"]), {"instant", "fast", "base", "slow", "travel", "breath"})
         self.assertEqual(set(TOK["elevation"]), {"0", "1", "2"})
         self.assertEqual(set(THEMES["light"]), set(THEMES["dark"]))
 
