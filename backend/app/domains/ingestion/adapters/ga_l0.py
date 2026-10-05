@@ -8,7 +8,7 @@ from typing import BinaryIO, Iterable
 from app.domains.ingestion import registry
 from app.domains.usage.api import CallIn
 
-from .common import dedupe, drop_bodies, get, to_dt, usage_ints
+from .common import content_digest, dedupe, drop_bodies, get, to_dt, usage_ints
 
 
 def _micro(usd) -> int | None:
@@ -40,7 +40,9 @@ class GaL0Adapter:
             t = get(ev, "type")
             if t not in ("llm.response", "run.end") or (t == "run.end" and has_resp):
                 continue
-            data = drop_bodies(get(ev, "data") or {}, self.store_bodies)
+            raw_data = get(ev, "data") or {}
+            ph, ch = content_digest(raw_data) if t == "llm.response" else (None, None)
+            data = drop_bodies(raw_data, self.store_bodies)
             at, basis = to_dt(get(ev, "at"))
             if t == "llm.response":
                 u = usage_ints(data)
@@ -53,5 +55,5 @@ class GaL0Adapter:
                 model_id=data.get("model") or "unknown", provider=data.get("provider") or "anthropic",
                 source_kind=self.kind, occurred_at=at, time_basis=basis, call_index=data.get("call_index"),
                 role="turn" if t == "run.end" else "main", dedupe_key=dedupe(self.kind, run, t, get(ev, "seq", n)),
-                cost_cli_microusd=_micro(data.get("cost_usd")), tool_calls=data.get("api_calls"),
+                cost_cli_microusd=_micro(data.get("cost_usd")), prompt_prefix_hash=ph, content_hashes=ch, tool_calls=data.get("api_calls"),
                 session=run or None, **u))

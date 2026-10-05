@@ -73,7 +73,8 @@ class TaskIn:
     node_count: int | None = None
     outcome: str = "unknown"
     outcome_source: str | None = None
-    first_try_success: bool | None = None
+    first_try_success: bool | None = None   # NULL = unknown (never False for unknown)
+    user_id: str | None = None
 
 
 @dataclass
@@ -159,6 +160,8 @@ class TaskRow:
     cost_list_nanousd: int | None = None
     cost_cli_microusd: int | None = None
     duration_ms: int | None = None
+    first_try_success: bool | None = None
+    user_id: str | None = None
     extra: dict = field(default_factory=dict)  # remaining TaskIn features (cap, loc, language, node_count, ...)
 
     @property
@@ -401,8 +404,8 @@ def _apply_task_in(t: TaskRow, ti: TaskIn | None) -> None:
         return
     t.kind, t.structure, t.context_mode, t.model_primary = ti.kind, ti.structure, ti.context_mode, ti.model_primary
     t.outcome, t.outcome_source = ti.outcome, ti.outcome_source
-    t.extra = {k: getattr(ti, k) for k in ("context_cap_tokens", "repo_size_loc", "language", "node_count",
-                                           "first_try_success")}
+    t.extra = {k: getattr(ti, k) for k in ("context_cap_tokens", "repo_size_loc", "language", "node_count")}
+    t.first_try_success, t.user_id = ti.first_try_success, ti.user_id
 
 
 # ---------------------------------------------------------------------------------------------------- service
@@ -431,6 +434,16 @@ class UsageService:
                                   "cache_read_per_mtok_microusd": p.cache_read,
                                   "cache_write_5m_per_mtok_microusd": p.cache_write_5m,
                                   "cache_write_1h_per_mtok_microusd": p.cache_write_1h}})
+        return out
+
+    def price_table(self) -> dict[str, dict]:
+        """{model: {in, out, cr, cw5, cw1, version}} micro-USD per Mtok, newest price version per model."""
+        out = {}
+        for model, ps in self.store.prices().items():
+            p = max(ps, key=lambda x: x.version, default=None)
+            if p is not None:
+                out[model] = {"in": p.input, "out": p.output, "cr": p.cache_read, "cw5": p.cache_write_5m,
+                              "cw1": p.cache_write_1h, "version": p.version}
         return out
 
     # -- load_calls -----------------------------------------------------------------------------------------
@@ -655,7 +668,8 @@ def _call(r: CallRow) -> dict:
             "task_id": r.task_id, "input_tokens": r.input_tokens, "cache_read_tokens": r.cache_read_tokens,
             "cache_write_tokens": r.cache_write_tokens, "output_tokens": r.output_tokens,
             "context_tokens": r.context_tokens, "cost_list_microusd": _micro(r.cost_list_nanousd),
-            "cost_cli_microusd": r.cost_cli_microusd}
+            "cost_list_nanousd": r.cost_list_nanousd, "cost_cli_microusd": r.cost_cli_microusd,
+            "prompt_prefix_hash": r.prompt_prefix_hash, "content_hashes": r.content_hashes}
 
 
 def _session(s: SessionRow) -> dict:
@@ -668,4 +682,5 @@ def _task(t: TaskRow) -> dict:
     return {"id": t.id, "external_ref": t.external_ref, "kind": t.kind, "structure": t.structure,
             "context_mode": t.context_mode, "model_primary": t.model_primary, "outcome": t.outcome, "calls": t.calls,
             "total_tokens": t.total_tokens, "cost_list_microusd": _micro(t.cost_list_nanousd),
-            "cost_cli_microusd": t.cost_cli_microusd}
+            "cost_cli_microusd": t.cost_cli_microusd, "first_try_success": t.first_try_success,
+            "user_id": t.user_id}
