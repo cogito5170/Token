@@ -1,0 +1,105 @@
+/* GENERATED from design/tokens.json by `npm run gen`. Do not edit. */
+
+:root {
+  --gc-font-sans: "IBM Plex Sans KR", "IBM Plex Sans", system-ui, sans-serif;
+  --gc-font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --gc-font-numeric: tabular-nums;
+  --gc-text-xs: 12px;
+  --gc-text-sm: 14px;
+  --gc-text-md: 16px;
+  --gc-text-lg: 20px;
+  --gc-text-xl: 24px;
+  --gc-text-kpi: 32px;
+  --gc-text-title: 28px;
+  --gc-leading-tight: 1.25;
+  --gc-leading-normal: 1.5;
+  --gc-weight-regular: 400;
+  --gc-weight-medium: 500;
+  --gc-weight-semibold: 600;
+  --gc-space-0: 0px;
+  --gc-space-1: 4px;
+  --gc-space-2: 8px;
+  --gc-space-3: 12px;
+  --gc-space-4: 16px;
+  --gc-space-5: 24px;
+  --gc-space-6: 32px;
+  --gc-space-7: 48px;
+  --gc-space-8: 64px;
+  --gc-radius-sm: 4px;
+  --gc-radius-md: 8px;
+  --gc-radius-lg: 12px;
+  --gc-radius-full: 9999px;
+  --gc-elevation-0: none;
+  --gc-elevation-1: 0 1px 2px rgba(16,24,32,0.06), 0 1px 1px rgba(16,24,32,0.04);
+  --gc-elevation-2: 0 4px 12px rgba(16,24,32,0.08);
+  --gc-layout-content-max: 1200px;
+  --gc-layout-nav: 232px;
+  --gc-layout-breakpoint-phone: 640px;
+  --gc-layout-breakpoint-tablet: 1024px;
+  --gc-duration-instant: 0ms;
+  --gc-duration-fast: 120ms;
+  --gc-duration-base: 200ms;
+  --gc-duration-slow: 400ms;
+  --gc-duration-breath: 4000ms;
+  --gc-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --gc-easing-exit: cubic-bezier(0.4, 0, 1, 1);
+  --gc-color-bg: #F6F7F9;
+  --gc-color-surface: #FFFFFF;
+  --gc-color-text: #1B1F24;
+  --gc-color-muted: #5A6470;
+  --gc-color-border: #D3D9E0;
+  --gc-color-accent: #1F5FAD;
+  --gc-color-warm: #A8530A;
+  --gc-color-focus: #1F5FAD;
+  --gc-series-input: #1F5FAD;
+  --gc-series-cache-read: #8DB8E8;
+  --gc-series-cache-write: #F6C99A;
+  --gc-series-output: #C2650F;
+  --gc-band-opacity: 0.22;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --gc-color-bg: #0D1117;
+    --gc-color-surface: #151B23;
+    --gc-color-text: #E6EDF3;
+    --gc-color-muted: #9AA5B1;
+    --gc-color-border: #2B333D;
+    --gc-color-accent: #5EA2F5;
+    --gc-color-warm: #F2A65A;
+    --gc-color-focus: #5EA2F5;
+    --gc-series-input: #5EA2F5;
+    --gc-series-cache-read: #264D7A;
+    --gc-series-cache-write: #B07A40;
+    --gc-series-output: #F2A65A;
+    --gc-band-opacity: 0.28;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --gc-color-bg: #0D1117;
+  --gc-color-surface: #151B23;
+  --gc-color-text: #E6EDF3;
+  --gc-color-muted: #9AA5B1;
+  --gc-color-border: #2B333D;
+  --gc-color-accent: #5EA2F5;
+  --gc-color-warm: #F2A65A;
+  --gc-color-focus: #5EA2F5;
+  --gc-series-input: #5EA2F5;
+  --gc-series-cache-read: #264D7A;
+  --gc-series-cache-write: #B07A40;
+  --gc-series-output: #F2A65A;
+  --gc-band-opacity: 0.28;
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --gc-duration-fast: 120ms;
+    --gc-duration-base: 0ms;
+    --gc-duration-slow: 0ms;
+    --gc-duration-breath: 0ms;
+  }
+}
