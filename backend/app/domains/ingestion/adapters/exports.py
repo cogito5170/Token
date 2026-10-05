@@ -1,0 +1,95 @@
+"""Anthropic / OpenAI usage exports (CSV or JSON). Column map -> usage dict -> telemetry.usage.l0_usage(provider, u).
+Only the column-name table lives here; CSV via stdlib csv, JSON via json.load of the whole document."""
+from __future__ import annotations
+
+import csv
+import io
+import json
+from typing import BinaryIO, Iterable
+
+from app.domains.ingestion import registry
+from app.domains.usage.api import CallIn
+
+from .common import dedupe, to_dt, usage_ints
+
+COLUMNS = {
+    "anthropic": {"input_tokens": "uncached_input_tokens", "output_tokens": "output_tokens",
+                  "cache_read_input_tokens": "cache_read_input_tokens",
+                  "cache_creation_input_tokens": "cache_creation_input_tokens"},
+    "openai": {"prompt_tokens": "input_tokens", "completion_tokens": "output_tokens",
+               "cached_tokens": "input_cached_tokens"},
+}
+MODEL_COLS = ("model", "model_id", "snapshot_id")
+TIME_COLS = ("starting_at", "start_time", "date", "bucket_start", "timestamp")
+KEY_COLS = ("api_key_id", "api_key", "project_id", "workspace_id")
+COST_COLS = ("cost_usd", "amount", "cost")
+
+
+def _num(v):
+    try:
+        return int(float(v)) if v not in (None, "") else None
+    except (TypeError, ValueError):
+        return None
+
+
+class ExportAdapter:
+    parser = "csv/json column map -> telemetry.usage.l0_usage@f6c7ae2"
+
+    def __init__(self, provider: str, kind: str):
+        self.provider, self.kind = provider, kind
+
+    def detect(self, filename: str, head: bytes) -> bool:
+        if not filename.endswith((".csv", ".json")):
+            return False
+        text = head.decode("utf-8", "ignore").lower()
+        needles = (("uncached_input_tokens", "cache_creation") if self.provider == "anthropic"
+                   else ("n_context_tokens_total", "input_cached_tokens", "num_model_requests", "prompt_tokens"))
+        return any(n in text for n in needles)
+
+    def _rows(self, f: BinaryIO, filename_hint: bytes):
+        raw = f.read()
+        text = raw.decode("utf-8-sig")
+        if text.lstrip().startswith(("[", "{")):
+            doc = json.loads(text)
+            rows = doc if isinstance(doc, list) else doc.get("data") or doc.get("results") or []
+            return [r for b in rows for r in (b.get("results", [b]) if isinstance(b, dict) else [b])]
+        return list(csv.DictReader(io.StringIO(text)))
+
+    def parse(self, f: BinaryIO) -> Iterable[object]:
+        from telemetry.usage import l0_usage
+        try:
+            rows = self._rows(f, b"")
+        except (ValueError, UnicodeDecodeError):
+            yield registry.ParsedReject(1, "bad_file")
+            return
+        cmap = COLUMNS[self.provider]
+        for n, row in enumerate(rows, start=1):
+            if not isinstance(row, dict):
+                yield registry.ParsedReject(n, "bad_row")
+                continue
+            u = {src: _num(row.get(src)) for src in cmap if row.get(src) not in (None, "")}
+            model = next((row[c] for c in MODEL_COLS if row.get(c)), None)
+            if not u or not model:
+                yield registry.ParsedReject(n, "bad_row")
+                continue
+            tok = usage_ints(l0_usage(self.provider, u))
+            at, basis = to_dt(next((row[c] for c in TIME_COLS if row.get(c)), None))
+            key = next((row[c] for c in KEY_COLS if row.get(c)), "")
+            cost = next((row[c] for c in COST_COLS if row.get(c) not in (None, "")), None)
+            try:
+                micro = round(float(cost) * 1_000_000) if cost is not None else None
+            except ValueError:
+                micro = None
+            yield registry.ParsedCall(n, CallIn(
+                model_id=model, provider=self.provider, source_kind=self.kind, occurred_at=at, time_basis=basis,
+                call_index=None, role="aggregate", cost_provider_microusd=micro,
+                dedupe_key=dedupe(self.kind, row.get(next((c for c in TIME_COLS if row.get(c)), ""), ""), model, key),
+                **tok))
+
+
+def anthropic_export() -> ExportAdapter:
+    return ExportAdapter("anthropic", "anthropic_export")
+
+
+def openai_export() -> ExportAdapter:
+    return ExportAdapter("openai", "openai_export")
