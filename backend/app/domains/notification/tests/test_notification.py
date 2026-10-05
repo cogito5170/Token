@@ -121,6 +121,19 @@ class WiringTest(unittest.TestCase):
             wiring.set_member_lookup(None)
 
 
+class FanOutTest(unittest.TestCase):
+    def test_default_lookup_uses_workspace_api_member_ids(self):
+        try:
+            from app.domains.workspace import api as workspace_api
+        except ImportError:
+            self.skipTest("fastapi not installed")
+        from unittest import mock
+        from app.domains.notification import wiring
+        with mock.patch.object(workspace_api, "member_ids", lambda ws: [U1, U2] if ws == WS else []):
+            self.assertEqual(wiring._workspace_members(WS), [U1, U2])
+            self.assertEqual(wiring._workspace_members("other"), [])
+
+
 class RouterTest(unittest.TestCase):
     def test_routes_present(self):
         try:
