@@ -1,5 +1,5 @@
 ```ga
-{"schema":"report/2","from":"design","handled":[{"id":"CMD-DS1","rev_seen":1,"status":"done"}],"commits":[],"tests":{"passed":7,"failed":0,"skipped":0},"change_size":"small","items":[{"id":"D1","state":"met","evidence":["design/tests/tokens/test_tokens.py: text pairs >=4.5 and UI pairs >=3 in light+dark","design/tests/tokens/test_tokens.py::test_series_luminance_gap >=0.08","design/tests/tokens/test_tokens.py::test_no_red_green","scripts/check_docs.py: 0 problem(s)"]}]}
+{"schema":"report/2","from":"design","handled":[{"id":"CMD-DS1","rev_seen":1,"status":"done"}],"commits":[],"tests":{"passed":7,"failed":0,"skipped":0},"change_size":"component","items":[{"id":"D1","state":"met","evidence":["design/tests/tokens/test_tokens.py: text pairs >=4.5 and UI pairs >=3 in light+dark","design/tests/tokens/test_tokens.py::test_series_luminance_gap >=0.08","design/tests/tokens/test_tokens.py::test_no_red_green","scripts/check_docs.py: 0 problem(s)"]}]}
 ```
 
 ## 한 일
