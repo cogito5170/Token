@@ -130,3 +130,24 @@ class HttpTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AuditWiringTest(unittest.TestCase):
+    def test_default_recorder_is_audit_api_record(self):
+        try:
+            from app.core import db
+            from app.domains.audit.api import record
+            from app.domains.workspace import wiring
+        except ImportError:
+            self.skipTest("runtime deps missing")
+        orig_pool, orig_get = db._pool, db.get_pool
+        db._pool = object()
+        wiring.set_audit_recorder(None)
+        try:
+            self.assertIs(wiring.get_service().audit, record)
+            fake = lambda a, u, d: None  # noqa: E731
+            wiring.set_audit_recorder(fake)
+            self.assertIs(wiring.get_service().audit, fake)
+        finally:
+            wiring.set_audit_recorder(None)
+            db._pool = orig_pool
