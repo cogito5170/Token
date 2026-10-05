@@ -10,14 +10,17 @@ from typing import BinaryIO, Iterable
 from app.domains.ingestion import registry
 from app.domains.usage.api import CallIn
 
-from .common import dedupe, to_dt, usage_ints
+from .common import dedupe, l0_tokens, to_dt
 
+# export column name -> key of the usage dict handed to l0_usage (Anthropic Messages usage names; OpenAI
+# usage-export names, with the older chat-completions spellings as aliases).
 COLUMNS = {
-    "anthropic": {"input_tokens": "uncached_input_tokens", "output_tokens": "output_tokens",
+    "anthropic": {"uncached_input_tokens": "input_tokens", "input_tokens": "input_tokens",
                   "cache_read_input_tokens": "cache_read_input_tokens",
-                  "cache_creation_input_tokens": "cache_creation_input_tokens"},
-    "openai": {"prompt_tokens": "input_tokens", "completion_tokens": "output_tokens",
-               "cached_tokens": "input_cached_tokens"},
+                  "cache_creation_input_tokens": "cache_creation_input_tokens", "output_tokens": "output_tokens"},
+    "openai": {"input_tokens": "input_tokens", "prompt_tokens": "input_tokens",
+               "input_cached_tokens": "input_cached_tokens", "cached_tokens": "input_cached_tokens",
+               "output_tokens": "output_tokens", "completion_tokens": "output_tokens"},
 }
 MODEL_COLS = ("model", "model_id", "snapshot_id")
 TIME_COLS = ("starting_at", "start_time", "date", "bucket_start", "timestamp")
@@ -67,12 +70,13 @@ class ExportAdapter:
             if not isinstance(row, dict):
                 yield registry.ParsedReject(n, "bad_row")
                 continue
-            u = {src: _num(row.get(src)) for src in cmap if row.get(src) not in (None, "")}
+            u = {key: _num(row[col]) for col, key in cmap.items() if row.get(col) not in (None, "")}
             model = next((row[c] for c in MODEL_COLS if row.get(c)), None)
             if not u or not model:
                 yield registry.ParsedReject(n, "bad_row")
                 continue
-            tok = usage_ints(l0_usage(self.provider, u))
+            fields, _null = l0_usage(self.provider, u)  # (fields dict, names the source gave as null); null stays None
+            tok = l0_tokens(fields)
             at, basis = to_dt(next((row[c] for c in TIME_COLS if row.get(c)), None))
             key = next((row[c] for c in KEY_COLS if row.get(c)), "")
             cost = next((row[c] for c in COST_COLS if row.get(c) not in (None, "")), None)

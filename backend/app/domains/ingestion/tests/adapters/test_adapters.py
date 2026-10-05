@@ -101,6 +101,33 @@ class NoOwnParserTests(unittest.TestCase):
         self.assertIn("l0_usage", (ADAPTERS / "exports.py").read_text())
 
 
+class L0TokensTests(unittest.TestCase):
+    """l0_usage returns (fields, null_names); these run without the package."""
+
+    def test_maps_l0_names_and_keeps_none(self):
+        t = common.l0_tokens({"input_tokens": 1000, "cache_read_input_tokens": 500,
+                              "cache_creation_input_tokens": 200, "output_tokens": 300})
+        self.assertEqual((t["input_tokens"], t["cache_read_tokens"], t["cache_write_5m_tokens"],
+                          t["cache_write_1h_tokens"], t["output_tokens"], t["thinking_tokens"]),
+                         (1000, 500, 200, None, 300, None))
+
+    def test_split_wins_over_total(self):
+        t = common.l0_tokens({"cache_creation_input_tokens": 9, "cache_creation_5m_input_tokens": 4,
+                              "cache_creation_1h_input_tokens": 5})
+        self.assertEqual((t["cache_write_5m_tokens"], t["cache_write_1h_tokens"]), (4, 5))
+
+    def test_export_adapter_unpacks_tuple_from_l0_usage(self):
+        stub = lambda provider, u: ({"input_tokens": 600, "cache_read_input_tokens": 400, "output_tokens": None},
+                                    ["output_tokens"])
+        saved = fake_modules(**{"telemetry.usage": {"l0_usage": stub}})
+        try:
+            out = calls(openai_export().parse(io.BytesIO(
+                b"date,model,input_tokens,input_cached_tokens,output_tokens\n2026-03-02,m,1000,400,\n")))
+        finally:
+            restore(saved)
+        self.assertEqual((out[0].input_tokens, out[0].cache_read_tokens, out[0].output_tokens), (600, 400, None))
+
+
 class MappingWithStubbedParsers(unittest.TestCase):
     def test_claude_code_maps_llm_response_only(self):
         ev = [{"type": "run.start", "data": {}},

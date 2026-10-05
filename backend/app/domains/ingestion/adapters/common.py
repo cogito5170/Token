@@ -27,6 +27,18 @@ def usage_ints(u: dict | None) -> dict:
     return out
 
 
+def l0_tokens(fields: dict | None) -> dict:
+    """CallIn token columns from the fields dict of telemetry.usage.l0_usage (l0 names). Missing/None stays None.
+    A cache-write total without the 5m/1h split goes to the 5m column."""
+    f = fields or {}
+    w5, w1 = f.get("cache_creation_5m_input_tokens"), f.get("cache_creation_1h_input_tokens")
+    if w5 is None and w1 is None:
+        w5 = f.get("cache_creation_input_tokens")
+    return usage_ints({"input_tokens": f.get("input_tokens"), "cache_read_tokens": f.get("cache_read_input_tokens"),
+                       "cache_write_5m_tokens": w5, "cache_write_1h_tokens": w1,
+                       "output_tokens": f.get("output_tokens"), "thinking_tokens": f.get("thinking_tokens")})
+
+
 def drop_bodies(data, store_bodies: bool = False):
     """Remove prompt / completion bodies from a parser event payload unless store_bodies; kept bodies are scrubbed."""
     from app.domains.ingestion.scrub import scrub_value
