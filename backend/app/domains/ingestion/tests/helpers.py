@@ -3,7 +3,9 @@ from datetime import datetime, timezone
 
 from app.domains.ingestion import registry
 from app.domains.ingestion.service import IngestService, MemoryStore
-from app.domains.usage.service import CallIn, MemoryStore as UsageMemory, UsageService
+from types import SimpleNamespace
+
+from app.domains.usage.api import CallIn
 
 WS = "00000000-0000-4000-8000-000000000001"
 SRC = "00000000-0000-4000-8000-0000000000aa"
@@ -29,12 +31,31 @@ class FakeAdapter:
                                                 input_tokens=int(i), output_tokens=int(o)))
 
 
+def fake_loader():
+    """Stands in for usage.api.load_calls: dedupe on dedupe_key, unknown models rejected (no content)."""
+    seen = set()
+
+    def load_calls(ws, project_id, source_id, job_id, calls, sessions=None, tasks=None):
+        ins = dup = 0
+        rej = []
+        for i, c in enumerate(calls):
+            if c.model_id.startswith("no-such"):
+                rej.append({"index": i, "code": "unknown_model"})
+            elif (ws, c.dedupe_key) in seen:
+                dup += 1
+            else:
+                seen.add((ws, c.dedupe_key))
+                ins += 1
+        return SimpleNamespace(inserted=ins, duplicates=dup, rejected=rej)
+    return load_calls
+
+
 def make(files: dict[str, bytes], max_attempts=3):
-    """-> (service, store, usage_service); every file is an upload with its own queued job."""
-    store, usage = MemoryStore(), UsageService(UsageMemory())
+    """-> (service, store, None); every file is an upload with its own queued job."""
+    store = MemoryStore()
     registry.register(FakeAdapter())
-    svc = IngestService(store, lambda uid: io.BytesIO(files[uid]), usage.load_calls, lambda ws, sid: None,
+    svc = IngestService(store, lambda uid: io.BytesIO(files[uid]), fake_loader(), lambda ws, sid: None,
                         max_attempts=max_attempts)
     for uid in files:
         store.register_upload(uid, WS, SRC)
-    return svc, store, usage
+    return svc, store, None

@@ -41,6 +41,8 @@ class PgIngestTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        from app.core import db
+        db._pool = None
         cls.pool.close()
         subprocess.run(["psql", DSN, "-qAt", "-c", f"DROP DATABASE IF EXISTS {cls.name}"], capture_output=True)
 
@@ -57,14 +59,13 @@ class PgIngestTest(unittest.TestCase):
         from app.domains.ingestion import registry
         from app.domains.ingestion.pg_store import PgStore
         from app.domains.ingestion.service import IngestService
-        from app.domains.usage.pg_store import PgStore as UPg, seed
-        from app.domains.usage.service import UsageService
+        from app.core import db
+        from app.domains.usage.api import load_calls
 
-        seed(self.pool)
+        db._pool = self.pool  # usage.api resolves its service from the shared pool
         registry.register(FakeAdapter())
         self.addCleanup(registry.unregister, "claude_code")
-        usage = UsageService(UPg(self.pool))
-        return IngestService(PgStore(self.pool), lambda uid: io.BytesIO(files[uid]), usage.load_calls, lambda w, s: None)
+        return IngestService(PgStore(self.pool), lambda uid: io.BytesIO(files[uid]), load_calls, lambda w, s: None)
 
     def test_two_workers_never_claim_one_job_and_pipeline_persists(self):
         ups = self._upload(12)
