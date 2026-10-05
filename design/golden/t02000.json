@@ -1,0 +1,62 @@
+{
+ "dropped_marks": [],
+ "edges": [],
+ "figures": [
+  {
+   "item": "w1",
+   "lightness_pct": 100,
+   "node": "n1",
+   "notches": 0,
+   "outcome_mark": null,
+   "ring": "none",
+   "ring_shape": "absent",
+   "role": "builder",
+   "shape": "circle",
+   "shape_index": 0,
+   "state": "running",
+   "tether_to": null,
+   "word": "build"
+  }
+ ],
+ "mood": {
+  "active": "pace",
+  "all_done": false,
+  "collaboration": false,
+  "lightness_delta_pct": 0,
+  "pace": 6,
+  "stall": false,
+  "tempo_permille": 800,
+  "tension": false
+ },
+ "recording": {
+  "path": "fixtures/monitor/recording.jsonl",
+  "sha256": "6a435a82706db0156e9f1dba931d1d72409f3765110b1b6bcb42e1e19e88033f"
+ },
+ "round": 1,
+ "schema": "gc-golden-scene/1",
+ "stage_word": null,
+ "t_ms": 2000,
+ "tiles": [
+  {
+   "band": null,
+   "holder": "n1",
+   "id": "w1",
+   "parent": null,
+   "role": "builder",
+   "shape": "outlined, attached",
+   "shelf": "held"
+  },
+  {
+   "band": "waiting_shelf",
+   "holder": null,
+   "id": "w2",
+   "parent": null,
+   "role": "reviewer",
+   "shape": "outlined",
+   "shelf": "waiting"
+  }
+ ],
+ "words": [
+  "build"
+ ]
+}
