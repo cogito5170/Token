@@ -1,5 +1,5 @@
 ```ga
-{"schema":"report/2","from":"frontend","handled":[{"id":"CMD-GC40","rev_seen":1,"status":"done"}],"commits":["c31a00c"],"tests":{"passed":16,"failed":0,"skipped":0},"change_size":"component","items":[{"id":"D1","state":"met","evidence":["frontend/tests/shell/api.test.ts: client types compile (tsc) + schema in sync with openapi.yaml"]},{"id":"D2","state":"met","evidence":["frontend/tests/shell/tokens.test.ts: CSS variables equal design/tokens.json"]},{"id":"D3","state":"met","evidence":["frontend/tests/shell/format.test.ts: 1234 micro-USD -> $0.0012, null -> em dash"]}]}
+{"schema":"report/2","from":"frontend","handled":[{"id":"CMD-GC40","rev_seen":1,"status":"done"}],"commits":[{"repo":"cogito5170/Token","branch":"claude/gc40","sha":"25838ce40c5e3012f4682e62ab171dd59989828e"}],"tests":{"passed":16,"failed":0,"skipped":0},"change_size":"component","items":[{"id":"D1","state":"met","evidence":["frontend/tests/shell/api.test.ts: client types compile (tsc) + schema in sync with openapi.yaml"]},{"id":"D2","state":"met","evidence":["frontend/tests/shell/tokens.test.ts: CSS variables equal design/tokens.json"]},{"id":"D3","state":"met","evidence":["frontend/tests/shell/format.test.ts: 1234 micro-USD -> $0.0012, null -> em dash"]}]}
 ```
 
 ## 한 일
