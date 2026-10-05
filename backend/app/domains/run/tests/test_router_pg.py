@@ -90,10 +90,11 @@ class MonitorHttpTest(unittest.TestCase):
         router.set_sources(None)
         self.addCleanup(router.set_sources, None)
         self.role, self.calls, self.audit = "admin", [], []
+        self.members = {self.ws}  # workspaces the caller belongs to
 
         def require_member(ws, uid, min_role="viewer"):
             self.calls.append((ws, min_role))
-            if ws != self.ws:
+            if ws not in self.members:
                 raise HTTPException(404, detail={"code": "not_found", "message": "workspace not found"})
             if RANK[self.role] < RANK[min_role]:
                 raise HTTPException(403, detail={"code": "forbidden", "message": "requires role " + min_role})
@@ -181,6 +182,36 @@ class MonitorHttpTest(unittest.TestCase):
                 r = self.c.get(f"{self.base}/{bad}/{path}")
                 self.assertEqual((r.status_code, r.json()["code"]), (404, "not_found"), (bad, path))
             self.assertEqual(self.c.get(f"/v1/workspaces/{self.other_ws}/monitor/sources/{sid}/{path}").status_code, 404)
+
+    # A bad Last-Event-ID answers 422 on /events, so a route that wrongly lets the caller in fails the test instead of
+    # opening an endless stream that TestClient would wait on. Other routes ignore the header.
+    NO_STREAM = {"Last-Event-ID": "x"}
+
+    def routes_of(self, ws, sid, rec):
+        base = f"/v1/workspaces/{ws}/monitor/sources/{sid}"
+        return [f"{base}/snapshot", f"{base}/events", f"{base}/recordings", f"{base}/recordings/{rec}"]
+
+    def test_a_source_is_reachable_only_through_its_own_workspace(self):
+        sid = self.source_id()
+        rec = self.c.get(f"{self.base}/{sid}/recordings").json()[0]["id"]
+        self.members = {self.ws, self.other_ws}  # one user, member of both workspaces
+        for url in self.routes_of(self.other_ws, sid, rec):
+            r = self.c.get(url, headers=self.NO_STREAM)
+            self.assertEqual(r.status_code, 404, url)
+            self.assertEqual(r.json()["code"], "not_found")
+        self.assertEqual(self.c.get(f"/v1/workspaces/{self.other_ws}/monitor/sources").json(), [])
+        self.assertEqual(self.c.get(self.routes_of(self.ws, sid, rec)[0]).status_code, 200)
+
+    def test_non_member_gets_404_on_every_route_of_a_real_source(self):
+        sid = self.source_id()
+        rec = self.c.get(f"{self.base}/{sid}/recordings").json()[0]["id"]
+        urls = self.routes_of(self.ws, sid, rec)
+        self.assertEqual([self.c.get(u, timeout=5).status_code for u in urls[:1] + urls[2:]], [200, 200, 200])
+        self.members = set()
+        for url in urls + [self.base]:
+            r = self.c.get(url, headers=self.NO_STREAM)
+            self.assertEqual(r.status_code, 404, url)
+            self.assertEqual(r.json()["code"], "not_found")
 
     def test_recordings_list_and_ndjson_agree_with_the_event_log(self):
         sid = self.source_id()
