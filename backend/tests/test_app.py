@@ -16,7 +16,7 @@ except ImportError:
 
 # Domains whose router.py does not exist yet (estimation: GC31 left HTTP out; integration, run: not built).
 # Building one makes this list stale and the test fails: remove the domain here when its router is mounted.
-UNBUILT = {"estimation", "integration", "run"}
+UNBUILT = {"estimation", "run"}
 METHODS = ("get", "post", "put", "patch", "delete")
 
 
