@@ -179,6 +179,10 @@ class WorkspaceService:
         m = self.require_member(ws, user_id)
         return self.store.workspace(ws), m.role
 
+    def member_ids(self, ws: str) -> list[str]:
+        """User ids of every member (system-level lookup for other domains, e.g. notification fan-out); [] if unknown."""
+        return [m.user_id for m in self.store.members(ws)] if _valid_uuid(ws) else []
+
     def members(self, ws: str, user_id: str) -> list[MemberRow]:
         self.require_member(ws, user_id)
         return self.store.members(ws)
