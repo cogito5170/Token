@@ -1,0 +1,134 @@
+{
+ "rule": "R5",
+ "note": "Expected values follow docs/consulting.md section 2 exactly: exact rational arithmetic (fractions), nano-USD, floor once to micro-USD at the end; ratios in params are 'n/d' strings.",
+ "params": {
+  "min_tasks": 3,
+  "min_fail_rate": "3/10",
+  "q_upper": "19/20",
+  "tiers": {
+   "claude-haiku-4-5-20251001": 1,
+   "claude-sonnet-5-5": 2
+  }
+ },
+ "prices": {
+  "claude-haiku-4-5-20251001": {
+   "in": 1000000,
+   "out": 5000000,
+   "cr": 100000,
+   "cw5": 1250000,
+   "cw1": 2000000
+  }
+ },
+ "calls": [
+  {
+   "id": 1,
+   "session": "s1",
+   "task": "t1",
+   "model": "claude-haiku-4-5-20251001",
+   "role": null,
+   "input": 6000,
+   "cache_read": 0,
+   "cache_write": 0,
+   "output": 500,
+   "context": 6000,
+   "cost_list_nanousd": 8500000,
+   "cost_cli_microusd": null,
+   "prefix_hash": null,
+   "content_hashes": [],
+   "at": "2026-10-01T00:00:00Z"
+  },
+  {
+   "id": 2,
+   "session": "s1",
+   "task": "t2",
+   "model": "claude-haiku-4-5-20251001",
+   "role": null,
+   "input": 6000,
+   "cache_read": 0,
+   "cache_write": 0,
+   "output": 500,
+   "context": 6000,
+   "cost_list_nanousd": 8500000,
+   "cost_cli_microusd": null,
+   "prefix_hash": null,
+   "content_hashes": [],
+   "at": "2026-10-01T00:00:00Z"
+  },
+  {
+   "id": 3,
+   "session": "s1",
+   "task": "t3",
+   "model": "claude-haiku-4-5-20251001",
+   "role": null,
+   "input": 6000,
+   "cache_read": 0,
+   "cache_write": 0,
+   "output": 500,
+   "context": 6000,
+   "cost_list_nanousd": 8500000,
+   "cost_cli_microusd": null,
+   "prefix_hash": null,
+   "content_hashes": [],
+   "at": "2026-10-01T00:00:00Z"
+  },
+  {
+   "id": 4,
+   "session": "s1",
+   "task": "t4",
+   "model": "claude-haiku-4-5-20251001",
+   "role": null,
+   "input": 6000,
+   "cache_read": 0,
+   "cache_write": 0,
+   "output": 500,
+   "context": 6000,
+   "cost_list_nanousd": 8500000,
+   "cost_cli_microusd": null,
+   "prefix_hash": null,
+   "content_hashes": [],
+   "at": "2026-10-01T00:00:00Z"
+  }
+ ],
+ "tasks": [
+  {
+   "id": "t1",
+   "kind": "bug",
+   "model": "claude-haiku-4-5-20251001",
+   "outcome": "correct",
+   "first_try_success": true
+  },
+  {
+   "id": "t2",
+   "kind": "bug",
+   "model": "claude-haiku-4-5-20251001",
+   "outcome": "incorrect",
+   "first_try_success": false
+  },
+  {
+   "id": "t3",
+   "kind": "bug",
+   "model": "claude-haiku-4-5-20251001",
+   "outcome": "incorrect",
+   "first_try_success": false
+  },
+  {
+   "id": "t4",
+   "kind": "bug",
+   "model": "claude-haiku-4-5-20251001",
+   "outcome": "incorrect",
+   "first_try_success": false
+  }
+ ],
+ "expect": {
+  "fires": true,
+  "evidence_call_ids": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "savings_p10_microusd": 14000,
+  "savings_p50_microusd": 16105,
+  "savings_p90_microusd": 17000
+ }
+}

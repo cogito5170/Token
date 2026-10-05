@@ -1,0 +1,107 @@
+{
+ "rule": "R2",
+ "note": "Expected values follow docs/consulting.md section 2 exactly: exact rational arithmetic (fractions), nano-USD, floor once to micro-USD at the end; ratios in params are 'n/d' strings.",
+ "params": {
+  "min_repeats": 2
+ },
+ "prices": {
+  "claude-haiku-4-5-20251001": {
+   "in": 1000000,
+   "out": 5000000,
+   "cr": 100000,
+   "cw5": 1250000,
+   "cw1": 2000000
+  }
+ },
+ "calls": [
+  {
+   "id": 1,
+   "session": "s1",
+   "task": "t1",
+   "model": "claude-haiku-4-5-20251001",
+   "role": null,
+   "input": 5000,
+   "cache_read": 0,
+   "cache_write": 0,
+   "output": 200,
+   "context": 5000,
+   "cost_list_nanousd": 6000000,
+   "cost_cli_microusd": null,
+   "prefix_hash": null,
+   "content_hashes": [
+    "aaaaaaaaaaaa:3000",
+    "bbbbbbbbbbbb:1000"
+   ],
+   "at": "2026-10-01T00:00:00Z"
+  },
+  {
+   "id": 2,
+   "session": "s1",
+   "task": "t1",
+   "model": "claude-haiku-4-5-20251001",
+   "role": null,
+   "input": 5200,
+   "cache_read": 0,
+   "cache_write": 0,
+   "output": 200,
+   "context": 5200,
+   "cost_list_nanousd": 6200000,
+   "cost_cli_microusd": null,
+   "prefix_hash": null,
+   "content_hashes": [
+    "aaaaaaaaaaaa:3000"
+   ],
+   "at": "2026-10-01T00:00:00Z"
+  },
+  {
+   "id": 3,
+   "session": "s1",
+   "task": "t1",
+   "model": "claude-haiku-4-5-20251001",
+   "role": null,
+   "input": 4000,
+   "cache_read": 0,
+   "cache_write": 0,
+   "output": 100,
+   "context": 4000,
+   "cost_list_nanousd": 4500000,
+   "cost_cli_microusd": null,
+   "prefix_hash": null,
+   "content_hashes": [
+    "aaaaaaaaaaaa:3000",
+    "cccccccccccc:500"
+   ],
+   "at": "2026-10-01T00:00:00Z"
+  },
+  {
+   "id": 4,
+   "session": "s2",
+   "task": "t1",
+   "model": "claude-haiku-4-5-20251001",
+   "role": null,
+   "input": 4000,
+   "cache_read": 0,
+   "cache_write": 0,
+   "output": 100,
+   "context": 4000,
+   "cost_list_nanousd": 4500000,
+   "cost_cli_microusd": null,
+   "prefix_hash": null,
+   "content_hashes": [
+    "bbbbbbbbbbbb:1000"
+   ],
+   "at": "2026-10-01T00:00:00Z"
+  }
+ ],
+ "tasks": [],
+ "expect": {
+  "fires": true,
+  "evidence_call_ids": [
+   2,
+   3
+  ],
+  "savings_p10_microusd": 3475,
+  "savings_p50_microusd": 6951,
+  "savings_p90_microusd": 6951
+ }
+}

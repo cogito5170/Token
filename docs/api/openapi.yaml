@@ -1,0 +1,1505 @@
+openapi: 3.1.0
+info:
+  title: ga Console API
+  version: 0.1.0
+  summary: Token service platform built with ga-sdk (CMD-GC0 contract).
+  description: |
+    Contract for the ga Console MVP. Every path item carries `x-domain` (exactly one domain from docs/domain-model.md).
+    Paths marked `x-later: true` belong to the Run domain and are designed but not built in the MVP.
+    Money is integer micro-USD (`*_microusd`), tokens are integers. Every numeric metric carries a `provenance`
+    (MEASURED | CALCULATED | ESTIMATED | SIMULATED). Provider keys are write-only: no response ever contains one.
+servers:
+  - url: http://localhost:8000
+security:
+  - bearer: []
+tags:
+  - {name: identity}
+  - {name: workspace}
+  - {name: source}
+  - {name: ingestion}
+  - {name: usage}
+  - {name: quota}
+  - {name: estimation}
+  - {name: advisor}
+  - {name: simulation}
+  - {name: profile}
+  - {name: report}
+  - {name: notification}
+  - {name: audit}
+  - {name: integration}
+  - {name: run}
+
+paths:
+  # ------------------------------------------------------------------ identity
+  /v1/auth/signup:
+    x-domain: identity
+    post:
+      tags: [identity]
+      operationId: signup
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/SignupRequest'}
+      responses:
+        '201': {description: created, content: {application/json: {schema: {$ref: '#/components/schemas/TokenPair'}}}}
+        '409': {$ref: '#/components/responses/Error'}
+  /v1/auth/login:
+    x-domain: identity
+    post:
+      tags: [identity]
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/LoginRequest'}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/TokenPair'}}}}
+        '401': {$ref: '#/components/responses/Error'}
+  /v1/auth/refresh:
+    x-domain: identity
+    post:
+      tags: [identity]
+      operationId: refresh
+      security: []
+      description: Rotates the refresh token (httpOnly cookie `gc_refresh`). Reuse of a rotated token revokes the family.
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/TokenPair'}}}}
+        '401': {$ref: '#/components/responses/Error'}
+  /v1/auth/logout:
+    x-domain: identity
+    post:
+      tags: [identity]
+      operationId: logout
+      responses:
+        '204': {description: logged out}
+  /v1/me:
+    x-domain: identity
+    get:
+      tags: [identity]
+      operationId: getMe
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/User'}}}}
+
+  # ------------------------------------------------------------------ workspace
+  /v1/workspaces:
+    x-domain: workspace
+    get:
+      tags: [workspace]
+      operationId: listWorkspaces
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Workspace'}}}}}
+    post:
+      tags: [workspace]
+      operationId: createWorkspace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/WorkspaceCreate'}
+      responses:
+        '201': {description: created, content: {application/json: {schema: {$ref: '#/components/schemas/Workspace'}}}}
+  /v1/workspaces/{ws}:
+    x-domain: workspace
+    parameters: [{$ref: '#/components/parameters/ws'}]
+    get:
+      tags: [workspace]
+      operationId: getWorkspace
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/Workspace'}}}}
+        '404': {$ref: '#/components/responses/Error'}
+  /v1/workspaces/{ws}/members:
+    x-domain: workspace
+    parameters: [{$ref: '#/components/parameters/ws'}]
+    get:
+      tags: [workspace]
+      operationId: listMembers
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Member'}}}}}
+    post:
+      tags: [workspace]
+      operationId: addMember
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/MemberAdd'}
+      responses:
+        '201': {description: added, content: {application/json: {schema: {$ref: '#/components/schemas/Member'}}}}
+  /v1/workspaces/{ws}/projects:
+    x-domain: workspace
+    parameters: [{$ref: '#/components/parameters/ws'}]
+    get:
+      tags: [workspace]
+      operationId: listProjects
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Project'}}}}}
+    post:
+      tags: [workspace]
+      operationId: createProject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ProjectCreate'}
+      responses:
+        '201': {description: created, content: {application/json: {schema: {$ref: '#/components/schemas/Project'}}}}
+
+  # ------------------------------------------------------------------ source
+  /v1/workspaces/{ws}/sources:
+    x-domain: source
+    parameters: [{$ref: '#/components/parameters/ws'}]
+    get:
+      tags: [source]
+      operationId: listSources
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Source'}}}}}
+    post:
+      tags: [source]
+      operationId: createSource
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/SourceCreate'}
+      responses:
+        '201': {description: created, content: {application/json: {schema: {$ref: '#/components/schemas/Source'}}}}
+  /v1/workspaces/{ws}/uploads:
+    x-domain: source
+    parameters: [{$ref: '#/components/parameters/ws'}]
+    post:
+      tags: [source]
+      operationId: createUpload
+      description: Stores the file and enqueues an ingest job. Returns the upload and its job id.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [source_id, file]
+              properties:
+                source_id: {type: string, format: uuid}
+                declared_format: {$ref: '#/components/schemas/SourceKind'}
+                file: {type: string, contentMediaType: application/octet-stream}
+      responses:
+        '201': {description: stored, content: {application/json: {schema: {$ref: '#/components/schemas/Upload'}}}}
+        '413': {$ref: '#/components/responses/Error'}
+
+  # ------------------------------------------------------------------ ingestion
+  /v1/workspaces/{ws}/ingest-jobs:
+    x-domain: ingestion
+    parameters: [{$ref: '#/components/parameters/ws'}]
+    get:
+      tags: [ingestion]
+      operationId: listIngestJobs
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/IngestJob'}}}}}
+  /v1/workspaces/{ws}/ingest-jobs/{job}:
+    x-domain: ingestion
+    parameters: [{$ref: '#/components/parameters/ws'}, {$ref: '#/components/parameters/job'}]
+    get:
+      tags: [ingestion]
+      operationId: getIngestJob
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/IngestJob'}}}}
+  /v1/workspaces/{ws}/ingest-jobs/{job}/events:
+    x-domain: ingestion
+    parameters: [{$ref: '#/components/parameters/ws'}, {$ref: '#/components/parameters/job'}]
+    get:
+      tags: [ingestion]
+      operationId: streamIngestJobEvents
+      description: |
+        Server-Sent Events. Each event: `id: <seq>`, `event: progress|done|failed`, `data: <IngestJobEvent JSON>`.
+        Resume with the `Last-Event-ID` header. The stream ends after `done` or `failed`. Heartbeat comment every 15 s.
+      parameters:
+        - {name: Last-Event-ID, in: header, required: false, schema: {type: integer, minimum: 0}}
+      responses:
+        '200':
+          description: event stream
+          content:
+            text/event-stream:
+              schema: {type: string}
+              x-event-schema: {$ref: '#/components/schemas/IngestJobEvent'}
+
+  # ------------------------------------------------------------------ usage
+  /v1/models:
+    x-domain: usage
+    get:
+      tags: [usage]
+      operationId: listModels
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/ModelWithPrice'}}}}}
+  /v1/workspaces/{ws}/usage/summary:
+    x-domain: usage
+    parameters: [{$ref: '#/components/parameters/ws'}, {$ref: '#/components/parameters/from'}, {$ref: '#/components/parameters/to'}, {$ref: '#/components/parameters/project'}]
+    get:
+      tags: [usage]
+      operationId: usageSummary
+      description: Overview tiles plus a daily trend (overview screen).
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/UsageSummary'}}}}
+  /v1/workspaces/{ws}/usage/series/tokens:
+    x-domain: usage
+    parameters: [{$ref: '#/components/parameters/ws'}, {$ref: '#/components/parameters/from'}, {$ref: '#/components/parameters/to'}, {$ref: '#/components/parameters/project'}, {$ref: '#/components/parameters/bucket'}]
+    get:
+      tags: [usage]
+      operationId: tokenSeries
+      description: Token mix over time (input, cache_read, cache_write, output), optionally split by model.
+      parameters:
+        - {name: group_by, in: query, schema: {type: string, enum: [none, model, source_kind]}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/SeriesSet'}}}}
+  /v1/workspaces/{ws}/usage/series/call-size:
+    x-domain: usage
+    parameters: [{$ref: '#/components/parameters/ws'}, {$ref: '#/components/parameters/from'}, {$ref: '#/components/parameters/to'}, {$ref: '#/components/parameters/project'}]
+    get:
+      tags: [usage]
+      operationId: callSizeHistogram
+      description: Histogram of per-call context tokens (log2 bins) and the outlier calls above the bulk-injection threshold.
+      parameters:
+        - {name: threshold, in: query, schema: {type: integer, default: 50000}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/Histogram'}}}}
+  /v1/workspaces/{ws}/usage/compare:
+    x-domain: usage
+    parameters: [{$ref: '#/components/parameters/ws'}, {$ref: '#/components/parameters/from'}, {$ref: '#/components/parameters/to'}, {$ref: '#/components/parameters/project'}]
+    get:
+      tags: [usage]
+      operationId: compareConfigs
+      description: Tokens and cost per correct task, accuracy, with P10-P90 ranges, grouped by configuration dimensions.
+      parameters:
+        - name: dims
+          in: query
+          required: true
+          style: form
+          explode: false
+          schema: {type: array, items: {type: string, enum: [structure, model, context_mode, task_kind]}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/Comparison'}}}}
+  /v1/workspaces/{ws}/usage/calls:
+    x-domain: usage
+    parameters: [{$ref: '#/components/parameters/ws'}, {$ref: '#/components/parameters/from'}, {$ref: '#/components/parameters/to'}, {$ref: '#/components/parameters/project'}, {$ref: '#/components/parameters/cursor'}]
+    get:
+      tags: [usage]
+      operationId: listCalls
+      parameters:
+        - {name: min_input, in: query, schema: {type: integer}}
+        - {name: model, in: query, schema: {type: string}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/CallPage'}}}}
+  /v1/workspaces/{ws}/usage/sessions:
+    x-domain: usage
+    parameters: [{$ref: '#/components/parameters/ws'}, {$ref: '#/components/parameters/from'}, {$ref: '#/components/parameters/to'}, {$ref: '#/components/parameters/cursor'}]
+    get:
+      tags: [usage]
+      operationId: listSessions
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/SessionPage'}}}}
+  /v1/workspaces/{ws}/usage/tasks:
+    x-domain: usage
+    parameters: [{$ref: '#/components/parameters/ws'}, {$ref: '#/components/parameters/from'}, {$ref: '#/components/parameters/to'}, {$ref: '#/components/parameters/cursor'}]
+    get:
+      tags: [usage]
+      operationId: listTasks
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/TaskPage'}}}}
+  /v1/workspaces/{ws}/usage/tasks/{task}:
+    x-domain: usage
+    parameters: [{$ref: '#/components/parameters/ws'}, {name: task, in: path, required: true, schema: {type: string, format: uuid}}]
+    patch:
+      tags: [usage]
+      operationId: updateTask
+      description: Set task features or outcome (user-labelled). Emits usage.task.outcome_set.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/TaskUpdate'}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/Task'}}}}
+
+  # ------------------------------------------------------------------ quota
+  /v1/workspaces/{ws}/budgets:
+    x-domain: quota
+    parameters: [{$ref: '#/components/parameters/ws'}]
+    get:
+      tags: [quota]
+      operationId: listBudgets
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Budget'}}}}}
+    post:
+      tags: [quota]
+      operationId: createBudget
+      description: Budget changes are audited (budget.create).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/BudgetCreate'}
+      responses:
+        '201': {description: created, content: {application/json: {schema: {$ref: '#/components/schemas/Budget'}}}}
+  /v1/workspaces/{ws}/budgets/{budget}:
+    x-domain: quota
+    parameters: [{$ref: '#/components/parameters/ws'}, {$ref: '#/components/parameters/budget'}]
+    get:
+      tags: [quota]
+      operationId: getBudget
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/Budget'}}}}
+    delete:
+      tags: [quota]
+      operationId: archiveBudget
+      responses:
+        '204': {description: archived}
+  /v1/workspaces/{ws}/budgets/{budget}/burn:
+    x-domain: quota
+    parameters: [{$ref: '#/components/parameters/ws'}, {$ref: '#/components/parameters/budget'}]
+    get:
+      tags: [quota]
+      operationId: budgetBurn
+      description: Cumulative use against the limit for both measures, and the projected exhaustion with a band.
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/BurnSeries'}}}}
+  /v1/workspaces/{ws}/quota/alerts:
+    x-domain: quota
+    parameters: [{$ref: '#/components/parameters/ws'}]
+    get:
+      tags: [quota]
+      operationId: listBudgetAlerts
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/BudgetAlert'}}}}}
+
+  # ------------------------------------------------------------------ estimation
+  /v1/workspaces/{ws}/estimates:
+    x-domain: estimation
+    parameters: [{$ref: '#/components/parameters/ws'}]
+    get:
+      tags: [estimation]
+      operationId: listEstimates
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Estimate'}}}}}
+    post:
+      tags: [estimation]
+      operationId: createEstimate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/EstimateRequest'}
+      responses:
+        '201': {description: created, content: {application/json: {schema: {$ref: '#/components/schemas/Estimate'}}}}
+  /v1/workspaces/{ws}/estimates/{estimate}:
+    x-domain: estimation
+    parameters: [{$ref: '#/components/parameters/ws'}, {name: estimate, in: path, required: true, schema: {type: string, format: uuid}}]
+    get:
+      tags: [estimation]
+      operationId: getEstimate
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/Estimate'}}}}
+  /v1/workspaces/{ws}/estimation/accuracy:
+    x-domain: estimation
+    parameters: [{$ref: '#/components/parameters/ws'}, {$ref: '#/components/parameters/from'}, {$ref: '#/components/parameters/to'}]
+    get:
+      tags: [estimation]
+      operationId: estimateAccuracy
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/Accuracy'}}}}
+
+  # ------------------------------------------------------------------ advisor
+  /v1/workspaces/{ws}/advisor/rules:
+    x-domain: advisor
+    parameters: [{$ref: '#/components/parameters/ws'}]
+    get:
+      tags: [advisor]
+      operationId: listAdvisorRules
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/AdvisorRule'}}}}}
+  /v1/workspaces/{ws}/advisor/findings:
+    x-domain: advisor
+    parameters: [{$ref: '#/components/parameters/ws'}, {$ref: '#/components/parameters/from'}, {$ref: '#/components/parameters/to'}]
+    get:
+      tags: [advisor]
+      operationId: listFindings
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Finding'}}}}}
+  /v1/workspaces/{ws}/proposals:
+    x-domain: advisor
+    parameters: [{$ref: '#/components/parameters/ws'}]
+    get:
+      tags: [advisor]
+      operationId: listProposals
+      parameters:
+        - {name: state, in: query, schema: {$ref: '#/components/schemas/ProposalState'}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Proposal'}}}}}
+  /v1/workspaces/{ws}/proposals/{proposal}:
+    x-domain: advisor
+    parameters: [{$ref: '#/components/parameters/ws'}, {$ref: '#/components/parameters/proposal'}]
+    get:
+      tags: [advisor]
+      operationId: getProposal
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/Proposal'}}}}
+  /v1/workspaces/{ws}/proposals/{proposal}/decision:
+    x-domain: advisor
+    parameters: [{$ref: '#/components/parameters/ws'}, {$ref: '#/components/parameters/proposal'}]
+    post:
+      tags: [advisor]
+      operationId: decideProposal
+      description: |
+        accept / reject / apply. `apply` runs policy check, then quota.check, then requires `confirm: true` from the
+        deciding user. Every call is written to the audit log. A refused apply sets state `blocked` with the reason.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ProposalDecision'}
+      responses:
+        '200': {description: decided, content: {application/json: {schema: {$ref: '#/components/schemas/Proposal'}}}}
+        '409': {$ref: '#/components/responses/Error'}
+
+  # ------------------------------------------------------------------ simulation
+  /v1/workspaces/{ws}/simulations:
+    x-domain: simulation
+    parameters: [{$ref: '#/components/parameters/ws'}]
+    post:
+      tags: [simulation]
+      operationId: createSimulation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/SimulationRequest'}
+      responses:
+        '201': {description: created, content: {application/json: {schema: {$ref: '#/components/schemas/Simulation'}}}}
+        '422': {$ref: '#/components/responses/Error'}
+  /v1/workspaces/{ws}/simulations/{simulation}:
+    x-domain: simulation
+    parameters: [{$ref: '#/components/parameters/ws'}, {name: simulation, in: path, required: true, schema: {type: string, format: uuid}}]
+    get:
+      tags: [simulation]
+      operationId: getSimulation
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/Simulation'}}}}
+
+  # ------------------------------------------------------------------ profile
+  /v1/workspaces/{ws}/profile:
+    x-domain: profile
+    parameters: [{$ref: '#/components/parameters/ws'}]
+    get:
+      tags: [profile]
+      operationId: getProfile
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/Profile'}}}}
+    put:
+      tags: [profile]
+      operationId: putProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/Profile'}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/Profile'}}}}
+  /v1/workspaces/{ws}/profile/stats:
+    x-domain: profile
+    parameters: [{$ref: '#/components/parameters/ws'}]
+    get:
+      tags: [profile]
+      operationId: getPersonalStats
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/PersonalStat'}}}}}
+  /v1/workspaces/{ws}/profile/recommendations:
+    x-domain: profile
+    parameters: [{$ref: '#/components/parameters/ws'}]
+    get:
+      tags: [profile]
+      operationId: listRecommendations
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Recommendation'}}}}}
+
+  # ------------------------------------------------------------------ report
+  /v1/workspaces/{ws}/reports:
+    x-domain: report
+    parameters: [{$ref: '#/components/parameters/ws'}]
+    get:
+      tags: [report]
+      operationId: listReports
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Report'}}}}}
+    post:
+      tags: [report]
+      operationId: generateReport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/Period'}
+      responses:
+        '201': {description: created, content: {application/json: {schema: {$ref: '#/components/schemas/Report'}}}}
+  /v1/workspaces/{ws}/reports/{report}/export:
+    x-domain: report
+    parameters: [{$ref: '#/components/parameters/ws'}, {name: report, in: path, required: true, schema: {type: string, format: uuid}}]
+    get:
+      tags: [report]
+      operationId: exportReport
+      parameters:
+        - {name: format, in: query, required: true, schema: {type: string, enum: [json, csv]}}
+      responses:
+        '200':
+          description: file
+          content:
+            application/json: {schema: {$ref: '#/components/schemas/Report'}}
+            text/csv: {schema: {type: string}}
+
+  # ------------------------------------------------------------------ notification
+  /v1/notifications:
+    x-domain: notification
+    get:
+      tags: [notification]
+      operationId: listNotifications
+      parameters:
+        - {name: unread, in: query, schema: {type: boolean}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Notification'}}}}}
+  /v1/notifications/{notification}/read:
+    x-domain: notification
+    parameters: [{name: notification, in: path, required: true, schema: {type: string, format: uuid}}]
+    post:
+      tags: [notification]
+      operationId: markNotificationRead
+      responses:
+        '204': {description: marked}
+  /v1/notification-prefs:
+    x-domain: notification
+    get:
+      tags: [notification]
+      operationId: getNotificationPrefs
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/NotificationPref'}}}}}
+    put:
+      tags: [notification]
+      operationId: putNotificationPrefs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: array, items: {$ref: '#/components/schemas/NotificationPref'}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/NotificationPref'}}}}}
+
+  # ------------------------------------------------------------------ audit
+  /v1/workspaces/{ws}/audit-log:
+    x-domain: audit
+    parameters: [{$ref: '#/components/parameters/ws'}, {$ref: '#/components/parameters/from'}, {$ref: '#/components/parameters/to'}, {$ref: '#/components/parameters/cursor'}]
+    get:
+      tags: [audit]
+      operationId: listAuditLog
+      description: Admin only.
+      parameters:
+        - {name: action, in: query, schema: {type: string}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/AuditPage'}}}}
+
+  # ------------------------------------------------------------------ integration
+  /v1/workspaces/{ws}/integrations:
+    x-domain: integration
+    parameters: [{$ref: '#/components/parameters/ws'}]
+    get:
+      tags: [integration]
+      operationId: listIntegrations
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Integration'}}}}}
+  /v1/workspaces/{ws}/provider-credentials:
+    x-domain: integration
+    parameters: [{$ref: '#/components/parameters/ws'}]
+    get:
+      tags: [integration]
+      operationId: listProviderCredentials
+      description: Returns references only (fingerprint, last4). Never the secret.
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/CredentialRef'}}}}}
+    post:
+      tags: [integration]
+      operationId: storeProviderCredential
+      description: Write-only. The secret is encrypted at once; the response holds only the reference. Audited.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CredentialCreate'}
+      responses:
+        '201': {description: stored, content: {application/json: {schema: {$ref: '#/components/schemas/CredentialRef'}}}}
+  /v1/workspaces/{ws}/provider-credentials/{credential}:
+    x-domain: integration
+    parameters: [{$ref: '#/components/parameters/ws'}, {name: credential, in: path, required: true, schema: {type: string, format: uuid}}]
+    delete:
+      tags: [integration]
+      operationId: revokeProviderCredential
+      responses:
+        '204': {description: revoked}
+
+  # ------------------------------------------------------------------ run (later)
+  /v1/workspaces/{ws}/runs:
+    x-domain: run
+    x-later: true
+    parameters: [{$ref: '#/components/parameters/ws'}]
+    get:
+      tags: [run]
+      operationId: listRuns
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Run'}}}}}
+    post:
+      tags: [run]
+      operationId: startRun
+      description: Starts only from an applied proposal (approval gate + budget check). Audited.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [proposal_id]
+              properties:
+                proposal_id: {type: string, format: uuid}
+      responses:
+        '201': {description: started, content: {application/json: {schema: {$ref: '#/components/schemas/Run'}}}}
+  /v1/workspaces/{ws}/runs/{run}:
+    x-domain: run
+    x-later: true
+    parameters: [{$ref: '#/components/parameters/ws'}, {$ref: '#/components/parameters/run'}]
+    get:
+      tags: [run]
+      operationId: getRun
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/Run'}}}}
+  /v1/workspaces/{ws}/runs/{run}/events:
+    x-domain: run
+    x-later: true
+    parameters: [{$ref: '#/components/parameters/ws'}, {$ref: '#/components/parameters/run'}]
+    get:
+      tags: [run]
+      operationId: streamRunEvents
+      description: SSE of run_events (node.started, turn, wait, node.retired, item.state). Resume with Last-Event-ID.
+      responses:
+        '200': {description: event stream, content: {text/event-stream: {schema: {type: string}}}}
+  /v1/workspaces/{ws}/runs/{run}/timeline:
+    x-domain: run
+    x-later: true
+    parameters: [{$ref: '#/components/parameters/ws'}, {$ref: '#/components/parameters/run'}]
+    get:
+      tags: [run]
+      operationId: runTimeline
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/Timeline'}}}}
+  /v1/workspaces/{ws}/runs/{run}/flow:
+    x-domain: run
+    x-later: true
+    parameters: [{$ref: '#/components/parameters/ws'}, {$ref: '#/components/parameters/run'}]
+    get:
+      tags: [run]
+      operationId: runFlow
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/Funnel'}}}}
+  /v1/workspaces/{ws}/runs/{run}/network:
+    x-domain: run
+    x-later: true
+    parameters: [{$ref: '#/components/parameters/ws'}, {$ref: '#/components/parameters/run'}]
+    get:
+      tags: [run]
+      operationId: runNetwork
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/Network'}}}}
+  /v1/workspaces/{ws}/runs/{run}/verdicts:
+    x-domain: run
+    x-later: true
+    parameters: [{$ref: '#/components/parameters/ws'}, {$ref: '#/components/parameters/run'}]
+    get:
+      tags: [run]
+      operationId: runVerdicts
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Verdict'}}}}}
+
+components:
+  securitySchemes:
+    bearer: {type: http, scheme: bearer, bearerFormat: JWT}
+
+  parameters:
+    ws: {name: ws, in: path, required: true, schema: {type: string, format: uuid}}
+    job: {name: job, in: path, required: true, schema: {type: string, format: uuid}}
+    budget: {name: budget, in: path, required: true, schema: {type: string, format: uuid}}
+    proposal: {name: proposal, in: path, required: true, schema: {type: string, format: uuid}}
+    run: {name: run, in: path, required: true, schema: {type: string, format: uuid}}
+    from: {name: from, in: query, required: false, schema: {type: string, format: date-time}}
+    to: {name: to, in: query, required: false, schema: {type: string, format: date-time}}
+    project: {name: project, in: query, required: false, schema: {type: string, format: uuid}}
+    bucket: {name: bucket, in: query, required: false, schema: {type: string, enum: [hour, day, week], default: day}}
+    cursor: {name: cursor, in: query, required: false, schema: {type: string}}
+
+  responses:
+    Error:
+      description: error
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+
+  schemas:
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: {type: string}
+        message: {type: string, description: Never contains secrets or uploaded content.}
+        request_id: {type: string}
+    Provenance:
+      type: string
+      enum: [MEASURED, CALCULATED, ESTIMATED, SIMULATED]
+    Measure:
+      type: string
+      enum: [list, cli]
+    Unit:
+      type: string
+      enum: [tokens, microusd, calls, tasks, permille, ms, count]
+    Metric:
+      type: object
+      description: One number with its unit and provenance. `value` null = unknown (never 0 for unknown).
+      required: [value, unit, provenance]
+      properties:
+        value: {type: [integer, 'null']}
+        unit: {$ref: '#/components/schemas/Unit'}
+        provenance: {$ref: '#/components/schemas/Provenance'}
+        coverage_permille: {type: integer, minimum: 0, maximum: 1000, description: Share of calls that reported this value (cli cost).}
+    Range:
+      type: object
+      description: P10 / P50 / P90 of one quantity.
+      required: [p10, p50, p90, unit, provenance]
+      properties:
+        p10: {type: integer}
+        p50: {type: integer}
+        p90: {type: integer}
+        unit: {$ref: '#/components/schemas/Unit'}
+        provenance: {$ref: '#/components/schemas/Provenance'}
+    Series:
+      type: object
+      required: [name, unit, provenance, points]
+      properties:
+        name: {type: string}
+        unit: {$ref: '#/components/schemas/Unit'}
+        provenance: {$ref: '#/components/schemas/Provenance'}
+        points:
+          type: array
+          items:
+            type: array
+            prefixItems: [{type: string, format: date-time}, {type: [integer, 'null']}]
+            minItems: 2
+            maxItems: 2
+    SeriesSet:
+      type: object
+      required: [bucket, series]
+      properties:
+        bucket: {type: string}
+        series: {type: array, items: {$ref: '#/components/schemas/Series'}}
+    Period:
+      type: object
+      required: [from, to]
+      properties:
+        from: {type: string, format: date}
+        to: {type: string, format: date}
+
+    SignupRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: {type: string, format: email}
+        password: {type: string, minLength: 12, writeOnly: true}
+        display_name: {type: string}
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: {type: string, format: email}
+        password: {type: string, writeOnly: true}
+    TokenPair:
+      type: object
+      description: Access token in the body; the refresh token is set as an httpOnly, Secure, SameSite=Strict cookie only.
+      required: [access_token, expires_in]
+      properties:
+        access_token: {type: string}
+        expires_in: {type: integer}
+    User:
+      type: object
+      required: [id, email]
+      properties:
+        id: {type: string, format: uuid}
+        email: {type: string}
+        display_name: {type: string}
+
+    Role:
+      type: string
+      enum: [admin, developer, viewer]
+    Workspace:
+      type: object
+      required: [id, name, slug, role]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        slug: {type: string}
+        role: {$ref: '#/components/schemas/Role'}
+    WorkspaceCreate:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string}
+    Member:
+      type: object
+      required: [user_id, role]
+      properties:
+        user_id: {type: string, format: uuid}
+        email: {type: string}
+        role: {$ref: '#/components/schemas/Role'}
+    MemberAdd:
+      type: object
+      required: [email, role]
+      properties:
+        email: {type: string, format: email}
+        role: {$ref: '#/components/schemas/Role'}
+    Project:
+      type: object
+      required: [id, name]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        language: {type: [string, 'null']}
+        repo_size_loc: {type: [integer, 'null']}
+    ProjectCreate:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string}
+        repo_url: {type: string}
+        language: {type: string}
+        repo_size_loc: {type: integer}
+
+    SourceKind:
+      type: string
+      enum: [claude_code, ga_l0, anthropic_export, openai_export, otel]
+    Source:
+      type: object
+      required: [id, kind, name]
+      properties:
+        id: {type: string, format: uuid}
+        kind: {type: string, enum: [upload, anthropic_api, openai_api, otel, ga_runner]}
+        name: {type: string}
+        project_id: {type: [string, 'null'], format: uuid}
+    SourceCreate:
+      type: object
+      required: [kind, name]
+      properties:
+        kind: {type: string, enum: [upload]}
+        name: {type: string}
+        project_id: {type: string, format: uuid}
+    Upload:
+      type: object
+      required: [id, filename, size_bytes, sha256, job_id]
+      properties:
+        id: {type: string, format: uuid}
+        filename: {type: string}
+        size_bytes: {type: integer}
+        sha256: {type: string}
+        job_id: {type: string, format: uuid}
+
+    IngestState:
+      type: string
+      enum: [queued, parsing, normalizing, loading, analyzing, done, failed]
+    IngestJob:
+      type: object
+      required: [id, upload_id, state, inserted, duplicates, rejected]
+      properties:
+        id: {type: string, format: uuid}
+        upload_id: {type: string, format: uuid}
+        state: {$ref: '#/components/schemas/IngestState'}
+        source_kind: {oneOf: [{$ref: '#/components/schemas/SourceKind'}, {type: 'null'}]}
+        parser: {type: [string, 'null']}
+        inserted: {type: integer}
+        duplicates: {type: integer}
+        rejected: {type: integer}
+        last_error_code: {type: [string, 'null']}
+        created_at: {type: string, format: date-time}
+        finished_at: {type: [string, 'null'], format: date-time}
+    IngestJobEvent:
+      type: object
+      required: [seq, stage, pct, counts]
+      properties:
+        seq: {type: integer}
+        stage: {$ref: '#/components/schemas/IngestState'}
+        pct: {type: integer, minimum: 0, maximum: 100}
+        counts:
+          type: object
+          properties:
+            inserted: {type: integer}
+            duplicates: {type: integer}
+            rejected: {type: integer}
+
+    ModelWithPrice:
+      type: object
+      required: [id, provider, family, tier, price]
+      properties:
+        id: {type: string}
+        provider: {type: string}
+        family: {type: string, enum: [claude, gpt, gemini]}
+        tier: {type: integer}
+        min_cache_tokens: {type: [integer, 'null']}
+        price:
+          type: object
+          required: [version, input_per_mtok_microusd, output_per_mtok_microusd, cache_read_per_mtok_microusd, cache_write_5m_per_mtok_microusd, cache_write_1h_per_mtok_microusd]
+          properties:
+            version: {type: integer}
+            effective_from: {type: string, format: date}
+            input_per_mtok_microusd: {type: integer}
+            output_per_mtok_microusd: {type: integer}
+            cache_read_per_mtok_microusd: {type: integer}
+            cache_write_5m_per_mtok_microusd: {type: integer}
+            cache_write_1h_per_mtok_microusd: {type: integer}
+    UsageSummary:
+      type: object
+      required: [period, tiles, trend]
+      properties:
+        period: {$ref: '#/components/schemas/Period'}
+        tiles:
+          type: object
+          required: [total_tokens, cost_list, cost_cli, correct_tasks, cost_list_per_correct, cost_cli_per_correct, budget_use]
+          properties:
+            total_tokens: {$ref: '#/components/schemas/Metric'}
+            cost_list: {$ref: '#/components/schemas/Metric'}
+            cost_cli: {$ref: '#/components/schemas/Metric'}
+            correct_tasks: {$ref: '#/components/schemas/Metric'}
+            cost_list_per_correct: {$ref: '#/components/schemas/Metric'}
+            cost_cli_per_correct: {$ref: '#/components/schemas/Metric'}
+            budget_use: {$ref: '#/components/schemas/Metric'}
+        trend: {$ref: '#/components/schemas/SeriesSet'}
+    Histogram:
+      type: object
+      required: [unit, provenance, bins, threshold, outliers]
+      properties:
+        unit: {$ref: '#/components/schemas/Unit'}
+        provenance: {$ref: '#/components/schemas/Provenance'}
+        threshold: {type: integer}
+        bins:
+          type: array
+          items:
+            type: object
+            required: [lo, hi, count]
+            properties:
+              lo: {type: integer}
+              hi: {type: integer}
+              count: {type: integer}
+        outliers:
+          type: array
+          items:
+            type: object
+            required: [call_id, context_tokens, model_id]
+            properties:
+              call_id: {type: integer}
+              context_tokens: {type: integer}
+              model_id: {type: string}
+              occurred_at: {type: string, format: date-time}
+    Comparison:
+      type: object
+      required: [dims, groups]
+      properties:
+        dims: {type: array, items: {type: string}}
+        groups:
+          type: array
+          items:
+            type: object
+            required: [key, tasks, correct, tokens_per_correct, cost_list_per_correct]
+            properties:
+              key: {type: object, additionalProperties: {type: string}}
+              tasks: {type: integer}
+              correct: {type: integer}
+              accuracy: {$ref: '#/components/schemas/Metric'}
+              tokens_per_correct: {$ref: '#/components/schemas/Range'}
+              cost_list_per_correct: {$ref: '#/components/schemas/Range'}
+              cost_cli_per_correct: {$ref: '#/components/schemas/Range'}
+    Call:
+      type: object
+      required: [id, occurred_at, model_id, provider, source_kind]
+      properties:
+        id: {type: integer}
+        occurred_at: {type: string, format: date-time}
+        time_basis: {type: string, enum: [reported, ingested]}
+        model_id: {type: string}
+        provider: {type: string}
+        source_kind: {$ref: '#/components/schemas/SourceKind'}
+        role: {type: [string, 'null']}
+        session_id: {type: [string, 'null'], format: uuid}
+        task_id: {type: [string, 'null'], format: uuid}
+        input_tokens: {type: [integer, 'null']}
+        cache_read_tokens: {type: [integer, 'null']}
+        cache_write_tokens: {type: [integer, 'null']}
+        output_tokens: {type: [integer, 'null']}
+        context_tokens: {type: [integer, 'null']}
+        cost_list_microusd: {type: [integer, 'null'], description: CALCULATED}
+        cost_cli_microusd: {type: [integer, 'null'], description: MEASURED}
+    CallPage:
+      type: object
+      required: [items]
+      properties:
+        items: {type: array, items: {$ref: '#/components/schemas/Call'}}
+        next_cursor: {type: [string, 'null']}
+    Session:
+      type: object
+      required: [id, client, calls]
+      properties:
+        id: {type: string, format: uuid}
+        client: {type: string}
+        started_at: {type: [string, 'null'], format: date-time}
+        ended_at: {type: [string, 'null'], format: date-time}
+        calls: {type: integer}
+        cost_list_microusd: {type: [integer, 'null']}
+        cost_cli_microusd: {type: [integer, 'null']}
+    SessionPage:
+      type: object
+      required: [items]
+      properties:
+        items: {type: array, items: {$ref: '#/components/schemas/Session'}}
+        next_cursor: {type: [string, 'null']}
+    Task:
+      type: object
+      required: [id, kind, outcome, calls]
+      properties:
+        id: {type: string, format: uuid}
+        external_ref: {type: [string, 'null']}
+        kind: {type: string, enum: [feature, bug, refactor, docs, other]}
+        structure: {type: [string, 'null']}
+        context_mode: {type: [string, 'null']}
+        model_primary: {type: [string, 'null']}
+        outcome: {type: string, enum: [correct, incorrect, unknown]}
+        calls: {type: integer}
+        total_tokens: {type: [integer, 'null']}
+        cost_list_microusd: {type: [integer, 'null']}
+        cost_cli_microusd: {type: [integer, 'null']}
+    TaskPage:
+      type: object
+      required: [items]
+      properties:
+        items: {type: array, items: {$ref: '#/components/schemas/Task'}}
+        next_cursor: {type: [string, 'null']}
+    TaskUpdate:
+      type: object
+      properties:
+        kind: {type: string, enum: [feature, bug, refactor, docs, other]}
+        outcome: {type: string, enum: [correct, incorrect, unknown]}
+        structure: {type: string, enum: [A, B, C, single]}
+        context_mode: {type: string, enum: [bulk, selective, fresh]}
+
+    Budget:
+      type: object
+      required: [id, scope, period, measure, limit_microusd, thresholds, used]
+      properties:
+        id: {type: string, format: uuid}
+        scope: {type: string, enum: [workspace, project, task]}
+        project_id: {type: [string, 'null'], format: uuid}
+        period: {type: string, enum: [day, month, task]}
+        measure: {$ref: '#/components/schemas/Measure'}
+        limit_microusd: {type: integer}
+        thresholds: {type: array, items: {type: integer}}
+        action_at_limit: {type: string, enum: [alert, stop]}
+        used:
+          type: object
+          description: Current period use in both measures, always side by side.
+          required: [list, cli]
+          properties:
+            list: {$ref: '#/components/schemas/Metric'}
+            cli: {$ref: '#/components/schemas/Metric'}
+    BudgetCreate:
+      type: object
+      required: [scope, period, measure, limit_microusd]
+      properties:
+        scope: {type: string, enum: [workspace, project, task]}
+        project_id: {type: string, format: uuid}
+        period: {type: string, enum: [day, month, task]}
+        measure: {$ref: '#/components/schemas/Measure'}
+        limit_microusd: {type: integer, minimum: 1}
+        thresholds: {type: array, items: {type: integer, minimum: 1, maximum: 100}}
+    BurnSeries:
+      type: object
+      required: [budget_id, limit_microusd, cumulative, projection]
+      properties:
+        budget_id: {type: string, format: uuid}
+        limit_microusd: {type: integer}
+        cumulative:
+          type: object
+          required: [list, cli]
+          properties:
+            list: {$ref: '#/components/schemas/Series'}
+            cli: {$ref: '#/components/schemas/Series'}
+        projection:
+          type: object
+          required: [p10, p50, p90, exhaust_at_p50]
+          properties:
+            p10: {$ref: '#/components/schemas/Series'}
+            p50: {$ref: '#/components/schemas/Series'}
+            p90: {$ref: '#/components/schemas/Series'}
+            exhaust_at_p10: {type: [string, 'null'], format: date-time}
+            exhaust_at_p50: {type: [string, 'null'], format: date-time}
+            exhaust_at_p90: {type: [string, 'null'], format: date-time}
+    BudgetAlert:
+      type: object
+      required: [id, budget_id, threshold, used_microusd, raised_at]
+      properties:
+        id: {type: string, format: uuid}
+        budget_id: {type: string, format: uuid}
+        threshold: {type: integer}
+        used_microusd: {type: integer}
+        raised_at: {type: string, format: date-time}
+
+    EstimateRequest:
+      type: object
+      required: [description, task_kind, model]
+      properties:
+        description: {type: string, maxLength: 20000, description: Used for features only; stored as hash + length.}
+        task_kind: {type: string, enum: [feature, bug, refactor, docs, other]}
+        repo_size_loc: {type: integer}
+        language: {type: string}
+        model: {type: string}
+        structure: {type: string, enum: [A, B, C, single]}
+        context_mode: {type: string, enum: [bulk, selective, fresh]}
+        context_cap_tokens: {type: integer}
+        project_id: {type: string, format: uuid}
+    Estimate:
+      type: object
+      required: [id, input_tokens, cache_tokens, output_tokens, cost_list, calls, success_prob, evidence, estimator]
+      properties:
+        id: {type: string, format: uuid}
+        input_tokens: {$ref: '#/components/schemas/Range'}
+        cache_tokens: {$ref: '#/components/schemas/Range'}
+        output_tokens: {$ref: '#/components/schemas/Range'}
+        cost_list: {$ref: '#/components/schemas/Range'}
+        cost_cli: {oneOf: [{$ref: '#/components/schemas/Range'}, {type: 'null'}]}
+        calls: {$ref: '#/components/schemas/Range'}
+        duration_ms: {oneOf: [{$ref: '#/components/schemas/Range'}, {type: 'null'}]}
+        success_prob: {$ref: '#/components/schemas/Metric'}
+        evidence:
+          type: object
+          required: [n, task_ids]
+          properties:
+            n: {type: integer}
+            task_ids: {type: array, items: {type: string, format: uuid}}
+            basis: {type: string, enum: [global_prior, workspace, user, blended]}
+        estimator:
+          type: object
+          required: [version, mape_permille]
+          properties:
+            version: {type: integer}
+            mape_permille: {type: [integer, 'null']}
+        recommended_config:
+          type: object
+          properties:
+            model: {type: string}
+            structure: {type: string}
+            context_cap_tokens: {type: integer}
+    Accuracy:
+      type: object
+      required: [n, mape_tokens, mape_cost, coverage_p10_p90, series]
+      properties:
+        n: {type: integer}
+        mape_tokens: {$ref: '#/components/schemas/Metric'}
+        mape_cost: {$ref: '#/components/schemas/Metric'}
+        coverage_p10_p90: {$ref: '#/components/schemas/Metric'}
+        series: {$ref: '#/components/schemas/SeriesSet'}
+
+    AdvisorRule:
+      type: object
+      required: [rule_id, name, enabled, params]
+      properties:
+        rule_id: {type: string, enum: [R1, R2, R3, R4, R5, R6, R7]}
+        name: {type: string}
+        enabled: {type: boolean}
+        params: {type: object}
+    Finding:
+      type: object
+      required: [id, rule_id, period, savings, savings_tokens, evidence_call_ids, proposal_id]
+      properties:
+        id: {type: string, format: uuid}
+        rule_id: {type: string}
+        period: {$ref: '#/components/schemas/Period'}
+        savings: {$ref: '#/components/schemas/Range'}
+        savings_tokens: {$ref: '#/components/schemas/Metric'}
+        measure: {$ref: '#/components/schemas/Measure'}
+        evidence_call_ids: {type: array, items: {type: integer}}
+        evidence_task_ids: {type: array, items: {type: string, format: uuid}}
+        detail: {type: object}
+        proposal_id: {type: [string, 'null'], format: uuid}
+    ProposalState:
+      type: string
+      enum: [proposed, accepted, rejected, applied, expired, blocked]
+    Proposal:
+      type: object
+      required: [id, origin, origin_ref, kind, change, state]
+      properties:
+        id: {type: string, format: uuid}
+        origin: {type: string, enum: [advisor, simulation, profile, run_node]}
+        origin_ref: {type: string}
+        kind: {type: string, enum: [config_export, budget_change, router_tier, context_cap, template, repo_change]}
+        change: {type: object}
+        expected_savings: {$ref: '#/components/schemas/Metric'}
+        state: {$ref: '#/components/schemas/ProposalState'}
+        blocked_reason: {type: [string, 'null']}
+        decisions:
+          type: array
+          items:
+            type: object
+            properties:
+              decision: {type: string}
+              decided_by: {type: string, format: uuid}
+              decided_at: {type: string, format: date-time}
+              policy_ok: {type: boolean}
+              budget_ok: {type: boolean}
+    ProposalDecision:
+      type: object
+      required: [decision]
+      properties:
+        decision: {type: string, enum: [accept, reject, apply]}
+        confirm: {type: boolean, description: Required true for apply.}
+        note: {type: string}
+
+    Assumption:
+      type: object
+      required: [kind, value]
+      properties:
+        kind: {type: string, enum: [model_swap, context_cap, node_count, cache_prefix_fixed, structure]}
+        value: {}
+        from: {}
+    SimulationRequest:
+      type: object
+      required: [assumptions, basis]
+      properties:
+        assumptions: {type: array, minItems: 1, items: {$ref: '#/components/schemas/Assumption'}}
+        basis:
+          type: object
+          required: [from, to]
+          properties:
+            from: {type: string, format: date-time}
+            to: {type: string, format: date-time}
+            project_id: {type: string, format: uuid}
+    Simulation:
+      type: object
+      required: [id, assumptions, basis, result]
+      properties:
+        id: {type: string, format: uuid}
+        assumptions: {type: array, items: {$ref: '#/components/schemas/Assumption'}}
+        basis:
+          type: object
+          required: [from, to, calls, tasks, price_version]
+          properties:
+            from: {type: string, format: date-time}
+            to: {type: string, format: date-time}
+            calls: {type: integer}
+            tasks: {type: integer}
+            price_version: {type: integer}
+            stats_version: {type: [integer, 'null']}
+        result:
+          type: object
+          required: [baseline, simulated]
+          properties:
+            baseline:
+              type: object
+              additionalProperties: {$ref: '#/components/schemas/Metric'}
+            simulated:
+              type: object
+              additionalProperties: {$ref: '#/components/schemas/Range'}
+
+    Profile:
+      type: object
+      properties:
+        monthly_budget_microusd: {type: [integer, 'null']}
+        task_budget_microusd: {type: [integer, 'null']}
+        quality_floor_permille: {type: [integer, 'null'], minimum: 0, maximum: 1000}
+        preferred_models: {type: array, items: {type: string}}
+        preferred_providers: {type: array, items: {type: string}}
+        billing_mode: {type: [string, 'null'], enum: [subscription, api, mixed, null]}
+        team_size: {type: [integer, 'null']}
+        store_bodies: {type: boolean, default: false}
+    PersonalStat:
+      type: object
+      required: [task_kind, model_id, structure, context_mode, tasks, correct]
+      properties:
+        task_kind: {type: string}
+        model_id: {type: string}
+        structure: {type: string}
+        context_mode: {type: string}
+        tasks: {type: integer}
+        correct: {type: integer}
+        first_try_success: {type: integer}
+        tokens_per_correct: {$ref: '#/components/schemas/Metric'}
+        cost_list_per_correct: {$ref: '#/components/schemas/Metric'}
+        cost_cli_per_correct: {$ref: '#/components/schemas/Metric'}
+    Recommendation:
+      type: object
+      required: [id, headline, current_config, recommended_config, saving, evidence_n]
+      properties:
+        id: {type: string, format: uuid}
+        headline: {type: string}
+        current_config: {type: object}
+        recommended_config: {type: object}
+        saving: {$ref: '#/components/schemas/Metric'}
+        evidence_n: {type: integer}
+        proposal_id: {type: [string, 'null'], format: uuid}
+
+    Report:
+      type: object
+      required: [id, period, body]
+      properties:
+        id: {type: string, format: uuid}
+        period: {$ref: '#/components/schemas/Period'}
+        body: {type: object}
+        created_at: {type: string, format: date-time}
+
+    Notification:
+      type: object
+      required: [id, kind, text, created_at]
+      properties:
+        id: {type: string, format: uuid}
+        kind: {type: string}
+        ref: {type: [string, 'null']}
+        text: {type: string}
+        created_at: {type: string, format: date-time}
+        read_at: {type: [string, 'null'], format: date-time}
+    NotificationPref:
+      type: object
+      required: [kind, channel, enabled]
+      properties:
+        kind: {type: string}
+        channel: {type: string, enum: [in_app, email, slack]}
+        enabled: {type: boolean}
+
+    AuditEntry:
+      type: object
+      required: [id, at, actor_kind, action, target_kind, target_id]
+      properties:
+        id: {type: integer}
+        at: {type: string, format: date-time}
+        actor_user_id: {type: [string, 'null'], format: uuid}
+        actor_kind: {type: string, enum: [user, system, worker, run_node]}
+        action: {type: string}
+        target_kind: {type: string}
+        target_id: {type: string}
+        detail: {type: object}
+    AuditPage:
+      type: object
+      required: [items]
+      properties:
+        items: {type: array, items: {$ref: '#/components/schemas/AuditEntry'}}
+        next_cursor: {type: [string, 'null']}
+
+    Integration:
+      type: object
+      required: [id, kind]
+      properties:
+        id: {type: string, format: uuid}
+        kind: {type: string, enum: [github, slack, email]}
+        config: {type: object}
+    CredentialCreate:
+      type: object
+      required: [provider, secret]
+      properties:
+        provider: {type: string, enum: [anthropic, openai, gemini, github, slack]}
+        secret: {type: string, writeOnly: true}
+    CredentialRef:
+      type: object
+      description: A reference to a stored provider key. There is deliberately no field that can hold the secret.
+      additionalProperties: false
+      required: [id, provider, fingerprint, last4, created_at]
+      properties:
+        id: {type: string, format: uuid}
+        provider: {type: string}
+        fingerprint: {type: string}
+        last4: {type: string, maxLength: 4}
+        created_at: {type: string, format: date-time}
+        revoked_at: {type: [string, 'null'], format: date-time}
+
+    Run:
+      type: object
+      required: [id, state, ga_version]
+      properties:
+        id: {type: string, format: uuid}
+        state: {type: string, enum: [queued, running, stopping, stopped, done, failed]}
+        ga_version: {type: string}
+        started_at: {type: [string, 'null'], format: date-time}
+        ended_at: {type: [string, 'null'], format: date-time}
+    Timeline:
+      type: object
+      required: [lanes]
+      properties:
+        lanes:
+          type: array
+          items:
+            type: object
+            required: [role, node_id, spans]
+            properties:
+              role: {type: string}
+              node_id: {type: string}
+              spans:
+                type: array
+                items:
+                  type: object
+                  required: [kind, start, end]
+                  properties:
+                    kind: {type: string, enum: [turn, wait, idle]}
+                    start: {type: string, format: date-time}
+                    end: {type: string, format: date-time}
+                    tokens: {type: [integer, 'null']}
+    Funnel:
+      type: object
+      required: [stages]
+      properties:
+        stages:
+          type: array
+          items:
+            type: object
+            required: [stage, count]
+            properties:
+              stage: {type: string, enum: [queued, running, judged, integrated]}
+              count: {type: integer}
+              dropped: {type: integer}
+    Network:
+      type: object
+      required: [nodes, edges]
+      properties:
+        nodes:
+          type: array
+          items:
+            type: object
+            required: [id, role]
+            properties:
+              id: {type: string}
+              role: {type: string}
+              tokens: {type: integer}
+              budget_used_permille: {type: integer}
+        edges:
+          type: array
+          items:
+            type: object
+            required: [from, to, messages]
+            properties:
+              from: {type: string}
+              to: {type: string}
+              messages: {type: integer}
+              tokens_est: {type: integer}
+              pi_weight_permille: {type: [integer, 'null']}
+    Verdict:
+      type: object
+      required: [item_id, tests_passed, tests_failed, verdict]
+      properties:
+        item_id: {type: string}
+        tests_passed: {type: integer}
+        tests_failed: {type: integer}
+        mutants_caught: {type: [integer, 'null']}
+        mutants_total: {type: [integer, 'null']}
+        preexisting_failures: {type: integer}
+        verdict: {type: string, enum: [pass, fail, partial]}

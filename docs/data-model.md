@@ -49,7 +49,7 @@ Source ─< Upload ─< IngestJob ─< UsageCall >─ UsageSession
 | `cost_cli_microusd` | bigint null | MEASURED | CLI 보고 비용(`total_cost_usd`, cost-state) |
 | `cost_provider_microusd` | bigint null | MEASURED | 공급자 내보내기의 금액 열 |
 | `prompt_prefix_hash` | text null | CALCULATED | 앞부분(최대 4 KiB) HMAC-SHA256 12 hex. 캐시 미스 · 다시 읽기 탐지용. 본문은 저장 안 함 |
-| `content_hashes` | text[] null | CALCULATED | 주입된 파일 · 블록별 해시(다시 읽기 탐지), l0 `Hasher` 사용 |
+| `content_hashes` | text[] null | CALCULATED | 주입된 파일 · 블록별 `<hash12>:<tokens>` (다시 읽기 탐지, R2), 해시는 l0 `Hasher` |
 | `dedupe_key` | text | — | `sha256(source_kind, response_id 또는 (session, call_index, occurred_at, tokens))`, 워크스페이스 안에서 unique |
 | `body_ref` | text null | — | 사용자가 본문 보관을 켠 경우에만 객체 저장소 경로 |
 
