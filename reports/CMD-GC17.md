@@ -1,5 +1,5 @@
 ```ga
-{"schema":"report/2","from":"core-backend","handled":[{"id":"CMD-GC17","rev_seen":1,"status":"done"}],"commits":[{"repo":"cogito5170/Token","branch":"claude/gc17","sha":"SHA40"}],"tests":{"passed":13,"failed":0,"skipped":0},"change_size":"component","items":[{"id":"D1","state":"met","evidence":["tests/test_quota.py::test_used_returns_both_measures_and_cli_coverage","tests/test_quota.py::test_alert_80_once_per_period","tests/test_quota.py::test_check_blocks_over_limit"]}]}
+{"schema":"report/2","from":"core-backend","handled":[{"id":"CMD-GC17","rev_seen":1,"status":"done"}],"commits":[{"repo":"cogito5170/Token","branch":"claude/gc17","sha":"ddb6b4b53e057188f962848f162eb8fd947ef273"}],"tests":{"passed":13,"failed":0,"skipped":0},"change_size":"component","items":[{"id":"D1","state":"met","evidence":["tests/test_quota.py::test_used_returns_both_measures_and_cli_coverage","tests/test_quota.py::test_alert_80_once_per_period","tests/test_quota.py::test_check_blocks_over_limit"]}]}
 ```
 
 ## 한 일
