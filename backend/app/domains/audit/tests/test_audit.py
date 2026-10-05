@@ -148,7 +148,7 @@ class HttpTest(unittest.TestCase):
         import app.domains.workspace.api as wapi
         from app.domains.audit import router as r
         from app.domains.audit import wiring
-        from app.domains.workspace.service import MemberRow, WorkspaceError
+        from app.domains.workspace.api import MemberRow, WorkspaceError
 
         self.svc, _ = make()
         wiring._service = self.svc
