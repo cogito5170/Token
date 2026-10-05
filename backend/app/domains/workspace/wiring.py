@@ -11,7 +11,7 @@ _subscribed = False
 
 
 def set_audit_recorder(fn) -> None:
-    """Wire audit.api.record here once GC15 lands; until then audit is a no-op."""
+    """Swap the audit recorder (tests inject a fake); the default is audit.api.record."""
     global _audit, _service
     _audit, _service = fn, None
 
@@ -21,9 +21,11 @@ def get_service() -> WorkspaceService:
     if _service is None:
         from app.core.db import get_pool
 
+        from app.domains.audit.api import record as audit_record
+
         from .pg_store import PgStore
 
-        kw = {"audit": _audit} if _audit else {}
+        kw = {"audit": _audit or audit_record}
         _service = WorkspaceService(PgStore(get_pool()), **kw)
     return _service
 

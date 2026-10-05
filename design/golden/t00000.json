@@ -1,0 +1,44 @@
+{
+ "dropped_marks": [],
+ "edges": [],
+ "figures": [],
+ "mood": {
+  "active": "pace",
+  "all_done": false,
+  "collaboration": false,
+  "lightness_delta_pct": 0,
+  "pace": 3,
+  "stall": false,
+  "tempo_permille": 650,
+  "tension": false
+ },
+ "recording": {
+  "path": "fixtures/monitor/recording.jsonl",
+  "sha256": "6a435a82706db0156e9f1dba931d1d72409f3765110b1b6bcb42e1e19e88033f"
+ },
+ "round": 1,
+ "schema": "gc-golden-scene/1",
+ "stage_word": null,
+ "t_ms": 0,
+ "tiles": [
+  {
+   "band": "waiting_shelf",
+   "holder": null,
+   "id": "w1",
+   "parent": null,
+   "role": "builder",
+   "shape": "outlined",
+   "shelf": "waiting"
+  },
+  {
+   "band": "waiting_shelf",
+   "holder": null,
+   "id": "w2",
+   "parent": null,
+   "role": "reviewer",
+   "shape": "outlined",
+   "shelf": "waiting"
+  }
+ ],
+ "words": []
+}
