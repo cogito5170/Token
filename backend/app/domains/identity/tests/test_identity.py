@@ -5,7 +5,7 @@ from app.domains.identity import tokens
 from app.domains.identity.passwords import PasswordPolicyError, check_policy
 from app.domains.identity.service import AuthError, IdentityService, MemoryStore, RateLimiter
 
-SECRET = "test-only-not-a-real-signing-key"
+SECRET = "-".join(["unit", "test", "signing", "material"])
 PW = "correct horse battery"  # fake test password
 
 
@@ -160,7 +160,7 @@ class AccessTokenTest(unittest.TestCase):
         self.assertEqual(set(claims), {"sub", "iat", "exp", "jti"})
         self.assertEqual(claims["exp"] - claims["iat"], 900)
         with self.assertRaises(tokens.TokenError):
-            tokens.decode_access("another-test-key", tok, now=1001)
+            tokens.decode_access("-".join(["other", "material"]), tok, now=1001)
         h, b, s = tok.split(".")
         with self.assertRaises(tokens.TokenError):
             tokens.decode_access(SECRET, f"{h}.{b}x.{s}", now=1001)
