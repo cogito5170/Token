@@ -15,7 +15,8 @@ ROOT = Path(__file__).resolve().parents[5]
 
 def ev(i, tokens, kind="k", mode="selective", correct=True, source="user"):
     return Evidence(id=str(i), features=Features(kind, "m", "A", mode), correct=correct, seq=i, source=source,
-                    values={"total_tokens": tokens, "calls": 3})
+                    values={"total_tokens": tokens, "calls": 3, "input_tokens": tokens, "cache_tokens": 0,
+                            "output_tokens": 0, "cost_list_microusd": tokens})
 
 
 class Backtest(unittest.TestCase):
@@ -115,7 +116,7 @@ class NoDescriptionStored(unittest.TestCase):
     SECRET = "refactor the payroll module quietly"
 
     def test_featurize_drops_text(self):
-        f, stored = featurize({"task_kind": "k", "model": "m", "description": self.SECRET})
+        f, stored = featurize({"task_kind": "feature", "model": "m", "description": self.SECRET})
         self.assertNotIn(self.SECRET, json.dumps(stored))
         self.assertEqual(stored["description"]["len"], len(self.SECRET))
         self.assertEqual(len(stored["description"]["sha256"]), 64)
@@ -123,8 +124,8 @@ class NoDescriptionStored(unittest.TestCase):
 
     def test_service_row_has_no_text(self):
         svc = EstimationService(prior=[ev(i, 100, source="global") for i in range(5)])
-        row = svc.create("w", {"task_kind": "k", "model": "m", "description": self.SECRET})
-        self.assertNotIn(self.SECRET, json.dumps(row))
+        row = svc.create("w", {"task_kind": "feature", "model": "m", "description": self.SECRET})
+        self.assertNotIn(self.SECRET, json.dumps(row, default=str))
         self.assertEqual(row["provenance"], "ESTIMATED")
         self.assertEqual(row["evidence"]["n"], 5)
         svc.record_outcome(row["id"], {"total_tokens": 100})
@@ -133,7 +134,7 @@ class NoDescriptionStored(unittest.TestCase):
     def test_unknown_outcome_tasks_are_not_evidence(self):
         tasks = [{"id": "t1", "kind": "k", "model": "m", "outcome": "unknown", "total_tokens": 5}]
         svc = EstimationService(lambda ws: tasks, prior=[ev(i, 100, source="global") for i in range(5)])
-        self.assertEqual(svc.create("w", {"task_kind": "k", "model": "m"})["evidence"]["basis"], "global_prior")
+        self.assertEqual(svc.create("w", {"task_kind": "feature", "model": "m", "description": "d"})["evidence"]["basis"], "global_prior")
 
 
 if __name__ == "__main__":
