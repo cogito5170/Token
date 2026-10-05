@@ -17,7 +17,7 @@ CALL_COLS = ("id, workspace_id, project_id, source_id, ingest_job_id, session_id
              "prompt_prefix_hash, content_hashes, dedupe_key, body_ref")
 TASK_COLS = ("id, workspace_id, external_ref, kind, structure, context_mode, model_primary, outcome, outcome_source, "
              "started_at, ended_at, calls, input_tokens, cache_read_tokens, cache_write_tokens, output_tokens, "
-             "max_call_input, cost_list_nanousd, cost_cli_microusd, duration_ms")
+             "max_call_input, cost_list_nanousd, cost_cli_microusd, duration_ms, first_try_success, user_id")
 SESSION_COLS = ("id, workspace_id, client, external_id, started_at, ended_at, calls, input_tokens, cache_read_tokens, "
                 "cache_write_tokens, output_tokens, cost_list_microusd, cost_cli_microusd")
 TASK_FIELDS = ("kind", "outcome", "outcome_source", "structure", "context_mode")
@@ -32,6 +32,12 @@ def _call(r) -> CallRow:
     for i in (1, 2, 3, 4, 5, 6):
         r[i] = _s(r[i])
     return CallRow(*r)
+
+
+def _task(r) -> TaskRow:
+    r = list(r)
+    r[0], r[1], r[-1] = str(r[0]), str(r[1]), _s(r[-1])
+    return TaskRow(*r)
 
 
 def seed(pool) -> None:
@@ -122,10 +128,10 @@ class PgStore:
         return str(c.execute(
             "INSERT INTO usage_tasks (workspace_id, project_id, external_ref, kind, structure, context_mode, "
             "context_cap_tokens, repo_size_loc, language, model_primary, node_count, outcome, outcome_source, "
-            "first_try_success) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id",
+            "first_try_success, user_id) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id",
             (ws, project_id, ref, ti.kind, ti.structure, ti.context_mode, ti.context_cap_tokens, ti.repo_size_loc,
              ti.language, ti.model_primary, ti.node_count, ti.outcome, ti.outcome_source,
-             ti.first_try_success)).fetchone()[0])
+             ti.first_try_success, ti.user_id)).fetchone()[0])
 
     @staticmethod
     def _refresh_session(c, sid, sessions, ws) -> None:
@@ -214,13 +220,13 @@ class PgStore:
                 f"SELECT {TASK_COLS} FROM usage_tasks WHERE workspace_id=%s AND started_at BETWEEN %s AND %s "
                 "AND (%s::uuid IS NULL OR project_id=%s::uuid) ORDER BY started_at DESC, id DESC OFFSET %s LIMIT %s",
                 (ws, t_from, t_to, project, project, offset, limit)).fetchall()
-        return [TaskRow(str(r[0]), str(r[1]), *r[2:]) for r in rows]
+        return [_task(r) for r in rows]
 
     def task(self, ws, task_id):
         with self.pool.connection() as c:
             r = c.execute(f"SELECT {TASK_COLS} FROM usage_tasks WHERE workspace_id=%s AND id=%s",
                           (ws, task_id)).fetchone()
-        return None if r is None else TaskRow(str(r[0]), str(r[1]), *r[2:])
+        return None if r is None else _task(r)
 
     def update_task(self, ws, task_id, fields):
         fields = {k: v for k, v in fields.items() if k in TASK_FIELDS}

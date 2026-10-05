@@ -9,7 +9,7 @@ from typing import BinaryIO, Iterable
 from app.domains.ingestion import registry
 from app.domains.usage.api import CallIn
 
-from .common import dedupe, drop_bodies, get, to_dt, usage_ints
+from .common import content_digest, dedupe, drop_bodies, get, to_dt, usage_ints
 
 
 class ClaudeCodeAdapter:
@@ -33,7 +33,9 @@ class ClaudeCodeAdapter:
         for n, ev in enumerate(events, start=1):
             if get(ev, "type") != "llm.response":
                 continue
-            data = drop_bodies(get(ev, "data") or {}, self.store_bodies)
+            raw_data = get(ev, "data") or {}
+            ph, ch = content_digest(raw_data)  # hash first, then the bodies are dropped
+            data = drop_bodies(raw_data, self.store_bodies)
             u = usage_ints(data)
             at, basis = to_dt(get(ev, "at"))
             idx = data.get("call_index")
@@ -42,5 +44,6 @@ class ClaudeCodeAdapter:
                 occurred_at=at, time_basis=basis, call_index=idx, role="main",
                 dedupe_key=dedupe(self.kind, run_id, data.get("response_id") or idx or n),
                 tool_calls=data.get("tool_calls"), latency_ms=data.get("latency_ms"),
-                prompt_prefix_hash=data.get("prompt_prefix_hash"), content_hashes=data.get("content_hashes"),
+                prompt_prefix_hash=ph or data.get("prompt_prefix_hash") or None,
+                content_hashes=ch or data.get("content_hashes") or None,
                 session=run_id, **u))

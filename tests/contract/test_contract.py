@@ -24,8 +24,13 @@ def migration_files():
 
 
 class MigrationFileTest(unittest.TestCase):
-    def test_init_equals_schema(self):
-        self.assertEqual((MIGRATIONS / "0001_init.sql").read_bytes(), (REPO / "docs" / "schema.sql").read_bytes())
+    def test_init_is_schema_baseline(self):
+        schema = (REPO / "docs" / "schema.sql").read_bytes()
+        self.assertTrue(schema.startswith((MIGRATIONS / "0001_init.sql").read_bytes()))
+
+    def test_migrations_in_order_equal_schema(self):
+        joined = b"".join(p.read_bytes() for p in migration_files())
+        self.assertEqual(joined, (REPO / "docs" / "schema.sql").read_bytes())
 
     def test_numbering_contiguous(self):
         nums = [int(p.name[:4]) for p in migration_files()]

@@ -48,8 +48,8 @@ Source ─< Upload ─< IngestJob ─< UsageCall >─ UsageSession
 | `price_version` | int null | — | 계산에 쓴 가격표 버전 |
 | `cost_cli_microusd` | bigint null | MEASURED | CLI 보고 비용(`total_cost_usd`, cost-state) |
 | `cost_provider_microusd` | bigint null | MEASURED | 공급자 내보내기의 금액 열 |
-| `prompt_prefix_hash` | text null | CALCULATED | 앞부분(최대 4 KiB) HMAC-SHA256 12 hex. 캐시 미스 · 다시 읽기 탐지용. 본문은 저장 안 함 |
-| `content_hashes` | text[] null | CALCULATED | 주입된 파일 · 블록별 `<hash12>:<tokens>` (다시 읽기 탐지, R2), 해시는 l0 `Hasher` |
+| `prompt_prefix_hash` | text null | CALCULATED | 고정 프롬프트 앞부분(최대 4 KiB)의 SHA-256 hex(64자). 캐시 미스 탐지용(R3). 본문이 없는 원천(공급자 CSV)은 NULL(빈 문자열 아님). 본문은 저장 안 함 |
+| `content_hashes` | text[] null | CALCULATED | 내용 블록별 `<sha256 앞 12 hex>:<tokens>` (다시 읽기 탐지, R2). tokens 는 원천이 블록별 토큰을 주면 그 값, 아니면 ceil(UTF-8 바이트 / 4) 추정. 본문이 없는 원천은 NULL(빈 배열 아님) |
 | `dedupe_key` | text | — | `sha256(source_kind, response_id 또는 (session, call_index, occurred_at, tokens))`, 워크스페이스 안에서 unique |
 | `body_ref` | text null | — | 사용자가 본문 보관을 켠 경우에만 객체 저장소 경로 |
 
@@ -62,7 +62,7 @@ Source ─< Upload ─< IngestJob ─< UsageCall >─ UsageSession
 "맞힌 작업당 비용"의 분모. 작업 1 개 = 사용자가 의도한 일 1 개(ga 의 work item, FINAL_TASK 의 run, 사용자가 표시한 세션 묶음).
 
 - 특징: `kind` (`feature` · `bug` · `refactor` · `docs` · `other`), `structure` (ga 구조 `A` · `B` · `C` 또는 `single`), `context_mode` (`bulk` · `selective` · `fresh`), `context_cap_tokens`, `repo_size_loc`, `language`, `model_primary`, `node_count`.
-- 결과: `outcome` (`correct` · `incorrect` · `unknown`), `outcome_source` (`judge` · `user` · `fixture`), `first_try_success` bool.
+- 결과: `outcome` (`correct` · `incorrect` · `unknown`), `outcome_source` (`judge` · `user` · `fixture`), `first_try_success` bool(NULL = 모름, R4), `user_id`(uuid null → `users`, 작업을 한 사용자; 0002_usage_extras).
 - 합계(CALCULATED): `calls`, 토큰 4 종, `cost_list_nanousd`, `cost_cli_microusd`, `duration_ms`, `max_call_input`.
 
 ### 2.4 Model 과 가격표
