@@ -1,5 +1,5 @@
 ```ga
-{"schema":"report/2","from":"consulting","handled":[{"id":"CMD-GC34","rev_seen":1,"status":"done"}],"commits":[{"repo":"cogito5170/Token","branch":"claude/gc34","sha":"9b46125000000000000000000000000000000000"}],"tests":{"passed":58,"failed":0,"skipped":3},"change_size":"component","items":[{"id":"D1","state":"met","evidence":["test_csv_and_json_exports_agree"]},{"id":"D2","state":"met","evidence":["test_every_number_has_provenance_and_source"]},{"id":"D3","state":"met","evidence":["test_export_is_audited_with_ids_only","test_failed_export_is_not_audited_and_bad_input_rejected"]}]}
+{"schema":"report/2","from":"consulting","handled":[{"id":"CMD-GC34","rev_seen":1,"status":"done"}],"commits":[{"repo":"cogito5170/Token","branch":"claude/gc34","sha":"9b461259aac6bdf4b46c8f5f03ab06fe43feeeb1"}],"tests":{"passed":58,"failed":0,"skipped":3},"change_size":"component","items":[{"id":"D1","state":"met","evidence":["test_csv_and_json_exports_agree"]},{"id":"D2","state":"met","evidence":["test_every_number_has_provenance_and_source"]},{"id":"D3","state":"met","evidence":["test_export_is_audited_with_ids_only","test_failed_export_is_not_audited_and_bad_input_rejected"]}]}
 ```
 
 ## 한 일
