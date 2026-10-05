@@ -20,3 +20,8 @@ def require_member(ws: str, user_id: str, min_role: str = "viewer") -> MemberRow
         return get_service().require_member(ws, user_id, min_role)
     except WorkspaceError as e:
         raise http_error(e) from None
+
+
+def member_ids(ws: str) -> list[str]:
+    """User ids of all members of ws (no caller check: for server-side fan-out such as notifications)."""
+    return get_service().member_ids(ws)
