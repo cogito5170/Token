@@ -1,0 +1,356 @@
+{
+ "schema": "monitor-script/1",
+ "note": "scripted pool replayed by backend/app/domains/run/replay.py; clock = 2026-01-01T00:00:00Z + t ms",
+ "steps": [
+  {
+   "t": 0,
+   "ops": [
+    {
+     "op": "write_json",
+     "path": "pool.json",
+     "content": {
+      "schema": "ga-pool/1",
+      "round": 1,
+      "n": 2,
+      "roles": [
+       "builder",
+       "reviewer"
+      ],
+      "attempts": 0,
+      "live": {}
+     }
+    },
+    {
+     "op": "write_json",
+     "path": "queue/001-w1.json",
+     "content": {
+      "schema": "work/1",
+      "id": "w1",
+      "role": "builder",
+      "parent": null
+     }
+    },
+    {
+     "op": "write_json",
+     "path": "queue/002-w2.json",
+     "content": {
+      "schema": "work/1",
+      "id": "w2",
+      "role": "reviewer",
+      "parent": null
+     }
+    }
+   ]
+  },
+  {
+   "t": 1000,
+   "ops": [
+    {
+     "op": "write_json",
+     "path": "pool.json",
+     "content": {
+      "schema": "ga-pool/1",
+      "round": 1,
+      "n": 2,
+      "roles": [
+       "builder",
+       "reviewer"
+      ],
+      "attempts": 0,
+      "live": {
+       "n1": {
+        "role": "builder",
+        "item": "w1",
+        "since": 1,
+        "idle": false,
+        "children": 0
+       }
+      }
+     }
+    },
+    {
+     "op": "append_jsonl",
+     "path": "pool/telemetry.jsonl",
+     "content": [
+      {
+       "type": "node.started",
+       "node": "n1",
+       "role": "builder",
+       "item": "w1"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "t": 2000,
+   "ops": [
+    {
+     "op": "append_jsonl",
+     "path": "nodes/n1/ga-budget.jsonl",
+     "content": [
+      {
+       "tokens": 1200,
+       "cost_cli_microusd": 3000
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "t": 3000,
+   "ops": [
+    {
+     "op": "write_json",
+     "path": "pool.json",
+     "content": {
+      "schema": "ga-pool/1",
+      "round": 2,
+      "n": 2,
+      "roles": [
+       "builder",
+       "reviewer"
+      ],
+      "attempts": 0,
+      "live": {
+       "n1": {
+        "role": "builder",
+        "item": "w1",
+        "since": 1,
+        "idle": false,
+        "children": 0
+       },
+       "n2": {
+        "role": "reviewer",
+        "item": "w2",
+        "since": 3,
+        "idle": false,
+        "children": 0
+       }
+      }
+     }
+    },
+    {
+     "op": "append_jsonl",
+     "path": "pool/telemetry.jsonl",
+     "content": [
+      {
+       "type": "node.started",
+       "node": "n2",
+       "role": "reviewer",
+       "item": "w2"
+      }
+     ]
+    },
+    {
+     "op": "write_json",
+     "path": "nodes/n2/state.json",
+     "content": {
+      "consults": [
+       "n1"
+      ],
+      "done": {}
+     }
+    }
+   ]
+  },
+  {
+   "t": 4000,
+   "ops": [
+    {
+     "op": "append_jsonl",
+     "path": "nodes/n1/telemetry.jsonl",
+     "content": [
+      {
+       "type": "peer.message.sent",
+       "from_session": "n1",
+       "to_session": "n2",
+       "msg_id": "m1",
+       "bytes": 10,
+       "tokens_est": 3
+      },
+      {
+       "type": "peer.message.sent",
+       "from_session": "n2",
+       "to_session": "n1",
+       "msg_id": "m2",
+       "in_reply_to": "m1",
+       "bytes": 8,
+       "tokens_est": 2
+      },
+      {
+       "type": "peer.message.sent",
+       "from_session": "n1",
+       "to_session": "n2",
+       "msg_id": "m3",
+       "bytes": 8,
+       "tokens_est": 2
+      }
+     ]
+    },
+    {
+     "op": "write_json",
+     "path": "nodes/n1/pi.json",
+     "content": {
+      "pi": {
+       "n2": 0.75
+      }
+     }
+    }
+   ]
+  },
+  {
+   "t": 5000,
+   "ops": [
+    {
+     "op": "append_jsonl",
+     "path": "pool/telemetry.jsonl",
+     "content": [
+      {
+       "type": "work.accepted",
+       "node": "n1",
+       "item": "w1",
+       "id": "w3",
+       "reason": "split"
+      }
+     ]
+    },
+    {
+     "op": "write_json",
+     "path": "queue/003-w3.json",
+     "content": {
+      "schema": "work/1",
+      "id": "w3",
+      "role": "builder",
+      "parent": "w1"
+     }
+    },
+    {
+     "op": "write_json",
+     "path": "nodes/n2/state.json",
+     "content": {
+      "consults": [],
+      "done": {}
+     }
+    },
+    {
+     "op": "write_json",
+     "path": "usage.json",
+     "content": {
+      "tokens_total": 5000,
+      "cost_cli_microusd": 40000,
+      "budget_microusd": 100000
+     }
+    }
+   ]
+  },
+  {
+   "t": 6000,
+   "ops": [
+    {
+     "op": "append_raw",
+     "path": "nodes/n1/telemetry.jsonl",
+     "content": "{\"type\":\"run.end\",\"node\":\"n1\",\"run_dur"
+    }
+   ]
+  },
+  {
+   "t": 7000,
+   "ops": [
+    {
+     "op": "append_raw",
+     "path": "nodes/n1/telemetry.jsonl",
+     "content": "ation_ms\":900,\"tokens\":1500}\n"
+    },
+    {
+     "op": "move",
+     "path": "queue/001-w1.json",
+     "to": "queue/done/001-w1.json"
+    },
+    {
+     "op": "write_json",
+     "path": "nodes/n1/state.json",
+     "content": {
+      "consults": [],
+      "done": {
+       "w1": {
+        "status": "done",
+        "verified": true
+       }
+      }
+     }
+    }
+   ]
+  },
+  {
+   "t": 8000,
+   "ops": [
+    {
+     "op": "append_jsonl",
+     "path": "pool/telemetry.jsonl",
+     "content": [
+      {
+       "type": "work.dropped",
+       "node": "n1",
+       "item": "w1",
+       "id": "w9",
+       "reason": "dup"
+      }
+     ]
+    },
+    {
+     "op": "move",
+     "path": "queue/002-w2.json",
+     "to": "queue/done/002-w2.json"
+    },
+    {
+     "op": "move",
+     "path": "queue/003-w3.json",
+     "to": "queue/done/003-w3.json"
+    },
+    {
+     "op": "write_json",
+     "path": "pool.json",
+     "content": {
+      "schema": "ga-pool/1",
+      "round": 3,
+      "n": 2,
+      "roles": [
+       "builder",
+       "reviewer"
+      ],
+      "attempts": 0,
+      "live": {}
+     }
+    }
+   ]
+  },
+  {
+   "t": 9000,
+   "ops": [
+    {
+     "op": "append_jsonl",
+     "path": "pool/telemetry.jsonl",
+     "content": [
+      {
+       "type": "node.retired",
+       "node": "n1",
+       "role": "builder",
+       "outcome": "done"
+      },
+      {
+       "type": "node.retired",
+       "node": "n2",
+       "role": "reviewer",
+       "outcome": "done"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "t": 10000,
+   "ops": []
+  }
+ ]
+}
