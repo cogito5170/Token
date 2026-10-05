@@ -20,8 +20,16 @@ from check_docs import work_items  # noqa: E402
 ROOT = Path(__file__).resolve().parent.parent
 
 
+class WorkError(Exception):
+    pass
+
+
 def ordered(items: list[dict]) -> list[dict]:
     byid = {i["id"]: i for i in items}
+    for it in items:
+        for d in it.get("depends_on", []):
+            if d not in byid:
+                raise WorkError(f"{it['id']}: depends_on names unknown item {d!r}")
     out, done = [], set()
 
     def visit(i: str) -> None:
@@ -50,7 +58,11 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--id", action="append", default=[])
     args = ap.parse_args(argv)
-    items = ordered(work_items((ROOT / "docs" / "roadmap.md").read_text(encoding="utf-8")))
+    try:
+        items = ordered(work_items((ROOT / "docs" / "roadmap.md").read_text(encoding="utf-8")))
+    except WorkError as e:
+        print(f"export_work: {e}", file=sys.stderr)
+        return 2
     for it in items:
         if not args.id or it["id"] in args.id:
             print(json.dumps(to_work(it), ensure_ascii=False, sort_keys=True))

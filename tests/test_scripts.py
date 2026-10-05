@@ -53,5 +53,21 @@ class ScriptsTest(unittest.TestCase):
         self.assertEqual({i["role"] for i in items}, ROLES)
 
 
+    def test_export_work_unknown_dependency(self):
+        import shutil
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            shutil.copytree(REPO / "scripts", root / "scripts", ignore=shutil.ignore_patterns("__pycache__"))
+            (root / "docs").mkdir()
+            text = (REPO / "docs" / "roadmap.md").read_text(encoding="utf-8")
+            (root / "docs" / "roadmap.md").write_text(
+                text.replace('"depends_on": ["CMD-GC10"]', '"depends_on": ["CMD-NOPE1"]', 1), encoding="utf-8")
+            r = subprocess.run([sys.executable, "scripts/export_work.py"], cwd=root, capture_output=True, text=True)
+            self.assertEqual(r.returncode, 2)
+            self.assertIn("unknown item 'CMD-NOPE1'", r.stderr)
+            self.assertNotIn("Traceback", r.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()
