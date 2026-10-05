@@ -256,6 +256,7 @@ export const tokens = {
       "fast": 120,
       "base": 200,
       "slow": 400,
+      "travel": 800,
       "breath": 4000
     },
     "easing": {

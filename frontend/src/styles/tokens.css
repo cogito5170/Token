@@ -40,6 +40,7 @@
   --gc-duration-fast: 120ms;
   --gc-duration-base: 200ms;
   --gc-duration-slow: 400ms;
+  --gc-duration-travel: 800ms;
   --gc-duration-breath: 4000ms;
   --gc-easing-standard: cubic-bezier(0.2, 0, 0, 1);
   --gc-easing-exit: cubic-bezier(0.4, 0, 1, 1);
@@ -100,6 +101,7 @@
     --gc-duration-fast: 120ms;
     --gc-duration-base: 0ms;
     --gc-duration-slow: 0ms;
+    --gc-duration-travel: 0ms;
     --gc-duration-breath: 0ms;
   }
 }

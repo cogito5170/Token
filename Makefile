@@ -7,6 +7,9 @@ test:            ## unit tests (runner: unittest)
 	$(PY) -m unittest discover -s tests -t .
 	cd backend && $(PY) -m unittest discover -s tests -t .
 	$(PY) -m unittest discover -s infra/tests -t .
+	@if command -v node >/dev/null 2>&1; then \
+		cd frontend && { [ -d node_modules ] || npm ci; } && npx vitest run; \
+	else echo "SKIP frontend unit tests: node is not installed"; fi
 
 check:           ## contract checks + secret grep
 	$(PY) scripts/check_docs.py
