@@ -1,9 +1,10 @@
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
-const root = process.cwd();
+const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const css = ["src/styles/tokens.css", "src/components/components.css"].map((f) => readFileSync(join(root, f), "utf8")).join("\n");
 const gallery = readFileSync(join(root, "tests/components/.build/gallery.html"), "utf8");
 const SECTIONS = ["chips", "kpi", "range", "cost", "bars", "figures", "kanban", "drawer"];

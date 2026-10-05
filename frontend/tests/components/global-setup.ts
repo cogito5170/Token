@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
-import { pathToFileURL } from "node:url";
+import { dirname, join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { build } from "esbuild";
 
 /**
@@ -8,7 +8,7 @@ import { build } from "esbuild";
  * esbuild (automatic React runtime) and rendered to static HTML once; the spec loads that markup.
  */
 export default async function globalSetup() {
-  const root = process.cwd();
+  const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
   const out = join(root, "tests/components/.build");
   mkdirSync(out, { recursive: true });
   const bundle = join(out, "gallery.mjs");
