@@ -23,3 +23,33 @@ test("csp lists inline script hashes and no remote origin", () => {
   expect(sec.csp(h)).toContain(h[0]);
   expect(sec.csp(h)).not.toMatch(/https?:|\*|unsafe-eval/);
 });
+
+test("IF2: static export comes from the env flag, not from rewriting the copied config; no tracked screenshot is overwritten", async () => {
+  const { readFileSync, existsSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  const { execFileSync } = await import("node:child_process");
+  const root = join(__dirname, "..");
+  const build = readFileSync(join(root, "scripts", "build-renderer.mjs"), "utf8");
+  expect(build).toContain('GC_STATIC_EXPORT: "1"');
+  expect(build).not.toMatch(/next\.config\.mjs/);
+  expect(readFileSync(join(root, "src", "preload.js"), "utf8")).not.toMatch(/sessionStorage|gc\.access/);
+  const spec = readFileSync(join(__dirname, "shell.spec.ts"), "utf8");
+  expect(spec).toContain('"test-results", "electron-window.png"');
+  expect(existsSync(join(__dirname, "electron-window.png"))).toBe(false);
+  const tracked = execFileSync("git", ["ls-files", "desktop/tests"], { cwd: join(root, ".."), encoding: "utf8" });
+  expect(tracked).not.toMatch(/\.png/);
+});
+
+test("IF2: installers are configured (AppImage, dmg, nsis), unsigned, with the product name and no credentials", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  const pkg = JSON.parse(readFileSync(join(__dirname, "..", "package.json"), "utf8"));
+  expect(pkg.build.productName).toBe("GA Console Monitor");
+  expect(pkg.build.appId).toMatch(/^[a-z0-9.]+$/);
+  expect(pkg.build.linux.target).toContain("AppImage");
+  expect(pkg.build.mac.target).toContain("dmg");
+  expect(pkg.build.mac.identity).toBeNull();
+  expect(pkg.build.win.target).toContain("nsis");
+  expect(JSON.stringify(pkg.build)).not.toMatch(/certificate|password|CSC_|notariz|appleId|apiKey/i);
+  expect(pkg.devDependencies["electron-builder"]).toMatch(/^\d+\.\d+\.\d+$/); // pinned
+});

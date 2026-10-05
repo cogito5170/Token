@@ -1,7 +1,7 @@
 import { _electron as electron, expect, test, type ElectronApplication, type Page } from "@playwright/test";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdtempSync, readdirSync, readFileSync, statSync, existsSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -64,7 +64,8 @@ test("launches against a fixture .ga dir and shows the stage", async () => {
       for (let i = 0; i < d.length; i += 4 * 97) seen.add((d[i] << 16) | (d[i + 1] << 8) | d[i + 2]);
       return seen.size;
     }), { timeout: 30_000 }).toBeGreaterThan(3);
-    await page.screenshot({ path: join(__dirname, "electron-window.png") });
+    mkdirSync(join(root, "test-results"), { recursive: true });
+    await page.screenshot({ path: join(root, "test-results", "electron-window.png") }); // untracked
   } finally { await app.close(); }
 });
 
@@ -82,6 +83,9 @@ test("renderer has no Node access and the preload exposes no token", async () =>
     expect(prefs.nodeIntegration).toBe(false);
     expect(prefs.sandbox).toBe(true);
     expect(prefs.webSecurity).toBe(true);
+    // no placeholder login token: the web Shell/live page detect window.gaDesktop themselves
+    expect(await page.evaluate(() => JSON.stringify({ ...sessionStorage }))).not.toContain("gc.access");
+    expect(page.url()).toMatch(/\/live\//);
   } finally { await app.close(); }
 });
 

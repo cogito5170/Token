@@ -3,3 +3,4 @@ renderer/
 .build/
 dist/
 test-results/
+demo/out/

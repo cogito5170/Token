@@ -10,7 +10,10 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 const RENDERER = process.env.GA_RENDERER_DIR || path.join(__dirname, "..", "renderer");
-const BACKEND = process.env.GA_BACKEND_DIR || path.join(__dirname, "..", "..", "backend");
+// packaged (scripts/pack.mjs): the vendored reader sits next to src/; from the repo: ../../backend
+const VENDORED = path.join(__dirname, "..", "backend");
+const BACKEND = process.env.GA_BACKEND_DIR
+  || (fs.existsSync(path.join(VENDORED, "app", "domains", "run", "sidecar.py")) ? VENDORED : path.join(__dirname, "..", "..", "backend"));
 const MIME = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json",
   ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon", ".woff2": "font/woff2", ".txt": "text/plain" };
 

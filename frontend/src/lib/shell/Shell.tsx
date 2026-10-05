@@ -6,6 +6,7 @@ import type { NavGroup } from "../nav/registry";
 import { api } from "../api";
 import type { Schemas } from "../api";
 import { getAccessToken, getWorkspaceId, isAuthPath, setAccessToken, setWorkspaceId } from "../auth/session";
+import { desktopBridge, isLivePath, shellMode } from "./desktop";
 
 export function WorkspaceSwitcher() {
   const [list, setList] = useState<Schemas["Workspace"][]>([]);
@@ -36,12 +37,15 @@ export function Shell({ nav, children }: { nav: NavGroup[]; children: ReactNode 
   const router = useRouter();
   const auth = isAuthPath(path);
   const [ready, setReady] = useState(false);
+  // inside the desktop shell /live is bare; the bridge is set by the preload before any page script runs
+  const bare = isLivePath(path) && desktopBridge() !== null;
   useEffect(() => {
-    if (!auth && !getAccessToken()) router.replace("/login");
+    const mode = shellMode({ path, auth, desktop: desktopBridge() !== null, hasToken: !!getAccessToken() });
+    if (mode === "redirect") router.replace("/login");
     else setReady(true);
   }, [auth, router, path]);
 
-  if (auth) return <main className="gc-main">{children}</main>;
+  if (auth || bare) return <main className="gc-main">{children}</main>;
   if (!ready) return null;
   return (
     <div className="gc-shell">

@@ -1,9 +1,10 @@
 "use client";
 // CMD-FE2: /live — the live monitor. ?source=<id> follows the SSE stream; add &recording=<id> to replay it.
-// Optional ?api=<base>&ws=<id> (the desktop sidecar uses the nil workspace). Read-only.
+// Optional ?api=<base>&ws=<id>; window.gaDesktop.sidecarUrl (desktop shell) wins over ?api. Desktop uses the nil workspace. Read-only.
 import { useEffect, useState } from "react";
 import { getAccessToken, getWorkspaceId } from "../../../lib/auth/session";
 import { fetchRecording, follow, merge, type Endpoint } from "../../../monitor/feed";
+import { liveBase } from "../../../lib/shell/desktop";
 import { Stage } from "../../../monitor/Stage";
 import type { MonitorEvent } from "../../../monitor/types";
 
@@ -18,7 +19,7 @@ export default function Page() {
     const source = q.get("source");
     if (!source) return;
     const ep: Endpoint = {
-      base: q.get("api") ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000",
+      base: liveBase(q, process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"),
       ws: q.get("ws") ?? getWorkspaceId() ?? NIL_WS,
       source,
       token: getAccessToken(),

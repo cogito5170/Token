@@ -1,6 +1,6 @@
 // Builds the static Next.js export of the frontend into desktop/renderer/ without touching frontend/.
-// It copies frontend/ to desktop/.build/, adds `output: "export"` to the copy's next config, and runs `next build`.
-import { cpSync, rmSync, writeFileSync, existsSync, symlinkSync } from "node:fs";
+// It copies frontend/ to desktop/.build/ and runs `next build` with GC_STATIC_EXPORT=1 (static export; frontend config is untouched).
+import { cpSync, rmSync, existsSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -14,10 +14,8 @@ const out = join(here, "renderer");
 rmSync(root, { recursive: true, force: true });
 cpSync(join(here, "..", "design"), join(root, "design"), { recursive: true });
 cpSync(src, tmp, { recursive: true, filter: (p) => !/[\\/](node_modules|\.next|out)([\\/]|$)/.test(p) });
-writeFileSync(join(tmp, "next.config.mjs"),
-  'export default { reactStrictMode: true, output: "export", trailingSlash: true, images: { unoptimized: true } };\n');
 const run = (cmd, args) => {
-  const r = spawnSync(cmd, args, { cwd: tmp, stdio: "inherit" });
+  const r = spawnSync(cmd, args, { cwd: tmp, stdio: "inherit", env: { ...process.env, GC_STATIC_EXPORT: "1" } });
   if (r.status !== 0) process.exit(r.status ?? 1);
 };
 run("npm", ["ci", "--no-audit", "--no-fund"]);

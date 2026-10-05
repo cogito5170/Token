@@ -7,10 +7,58 @@
     "test": "playwright test",
     "build:renderer": "node scripts/build-renderer.mjs",
     "start": "electron . --ga-dir",
-    "pack": "node scripts/pack.mjs"
+    "pack": "node scripts/pack.mjs",
+    "dist:linux": "node scripts/pack.mjs && electron-builder --linux AppImage",
+    "dist:mac": "node scripts/pack.mjs && electron-builder --mac dmg",
+    "dist:win": "node scripts/pack.mjs && electron-builder --win nsis",
+    "demo": "node demo/record.mjs"
   },
   "devDependencies": {
+    "@playwright/test": "1.56.1",
     "electron": "44.5.1",
-    "@playwright/test": "1.56.1"
+    "electron-builder": "26.15.3"
+  },
+  "description": "GA Console Monitor: read-only live monitor for a local .ga directory",
+  "author": "ga Console",
+  "build": {
+    "appId": "dev.gaconsole.monitor",
+    "productName": "GA Console Monitor",
+    "electronVersion": "44.5.1",
+    "electronDist": "node_modules/electron/dist",
+    "directories": {
+      "app": "dist/app",
+      "output": "dist/installers",
+      "buildResources": "build"
+    },
+    "icon": "build/icon.png",
+    "npmRebuild": false,
+    "publish": null,
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Utility",
+      "icon": "build/icon.png",
+      "executableArgs": []
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.developer-tools",
+      "identity": null,
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "asar": false
   }
 }
