@@ -11,7 +11,7 @@
 `make check` 통과, `make test` 31 통과(2 skip: 스키마 DSN 없음), item check 11 통과. 병합 후 재실행 동일.
 
 ## 알아둘 것
-- fastapi 가 없으면  는 skip 한다(다른 런타임 의존 시험과 같음).
+- fastapi 가 없으면 healthz 시험은 skip 한다(다른 런타임 의존 시험과 같음).
 - 컨테이너에 fastapi/psycopg 가 없어 pip 로 설치했다(pyproject 의존성 그대로). Python 3.11 에서 시험.
 - `provenance.py` 는 GC0 것을 그대로 두었다. 이벤트 아웃박스(`domain_events`)와 인증 의존성(`require_member`)은 이 항목 범위 밖이라 만들지 않았다 — identity/workspace 항목에서.
 - 도메인은 `app/domains/<d>/router.py` 에 `router: APIRouter` 를 두면 자동 마운트된다.
