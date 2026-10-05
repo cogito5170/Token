@@ -1,5 +1,5 @@
 ```ga
-{"schema":"report/2","from":"consulting","handled":[{"id":"CMD-GC31","rev_seen":1,"status":"done"}],"commits":[{"repo":"cogito5170/Token","branch":"claude/gc31","sha":"9f43df749bd536555ef92ee86f051d713a0055aa"}],"tests":{"passed":48,"failed":0,"skipped":3},"change_size":"component","items":[{"id":"D1","state":"met","evidence":["backtest --estimator app: tokens MAPE 12.04% < 21.98% baseline, P10-P90 coverage 89.0% (test_beats_baseline_with_coverage)"]},{"id":"D2","state":"met","evidence":["test_few_evidence_widens: n<3 gives P10x0.5, P90x2, evidence_n shown"]},{"id":"D3","state":"met","evidence":["test_featurize_drops_text, test_service_row_has_no_text: description stored as sha256+len only"]}]}
+{"schema":"report/2","from":"consulting","handled":[{"id":"CMD-GC31","rev_seen":1,"status":"done"}],"commits":[{"repo":"cogito5170/Token","branch":"claude/gc31","sha":"9f43df749bd536555ef92ee86f051d713a0055aa"}],"tests":{"passed":49,"failed":0,"skipped":3},"change_size":"component","items":[{"id":"D1","state":"met","evidence":["backtest --estimator app: tokens MAPE 12.04% < 21.98% baseline, P10-P90 coverage 89.0% (test_beats_baseline_with_coverage)"]},{"id":"D2","state":"met","evidence":["test_few_evidence_widens: n<3 gives P10x0.5, P90x2, evidence_n shown"]},{"id":"D3","state":"met","evidence":["test_featurize_drops_text, test_service_row_has_no_text: description stored as sha256+len only"]}]}
 ```
 
 ## 한 일
@@ -15,7 +15,7 @@
 FINAL_TASK 의 task_kind = task id(T1..T5), structure = arm, context_mode = mode 로 매핑.
 
 ## 시험
-estimation 13개, make test 48 통과 · 3 skip(런타임 의존성), make check 0 문제. origin/claude/gracious-meitner-vp49xe 병합 후 재실행.
+estimation 14개(leakage 시험 포함: 평가 대상 run 이 자기 근거에 있으면 실패), make test 49 통과 · 3 skip(런타임 의존성), make check 0 문제. origin/claude/gracious-meitner-vp49xe 병합 후 재실행.
 
 ## 열린 문제
 - list 비용 MAPE 는 기준선보다 나쁘다(104.5% vs 92.7%): bulk 모드 2자릿수 배 차이 때문에 P50 이 가중 평균 쪽으로 끌린다. 완료 조건은 토큰만 요구. 개선하려면 context_mode 불일치 가중을 키우는 방안.

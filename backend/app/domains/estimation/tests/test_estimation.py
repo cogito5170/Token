@@ -31,6 +31,31 @@ class Backtest(unittest.TestCase):
             self.assertIn(k, res["app"])
 
 
+class NoLeakage(unittest.TestCase):
+    def test_run_never_in_its_own_evidence(self):
+        import importlib.util
+        from unittest import mock
+
+        import app.domains.estimation.estimator as est
+        spec = importlib.util.spec_from_file_location("backtest_estimator", ROOT / "scripts" / "backtest_estimator.py")
+        bt = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(bt)
+        rows = bt.load(bt.RUNS)
+        seen = []
+        real = est.estimate
+
+        def spy(target, user_pool, global_pool, *a, **k):
+            seen.append([e.id for e in user_pool + global_pool])
+            return real(target, user_pool, global_pool, *a, **k)
+
+        with mock.patch.object(est, "estimate", spy):
+            bt.app_scorer(rows)
+        self.assertEqual(len(seen), len(rows))
+        for r, ids in zip(rows, seen):
+            self.assertNotIn(r["run_id"], ids)
+            self.assertEqual(len(ids), len(rows) - 1)
+
+
 class Rules(unittest.TestCase):
     def test_few_evidence_widens(self):
         pool = [ev(1, 1000), ev(2, 1000)]
