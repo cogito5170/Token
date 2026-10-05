@@ -51,10 +51,10 @@
   --gc-color-accent: #1F5FAD;
   --gc-color-warm: #A8530A;
   --gc-color-focus: #1F5FAD;
-  --gc-series-input: #1F5FAD;
-  --gc-series-cache-read: #8DB8E8;
-  --gc-series-cache-write: #F6C99A;
-  --gc-series-output: #C2650F;
+  --gc-series-input: #0F2847;
+  --gc-series-cache-read: #335C8C;
+  --gc-series-cache-write: #B7620F;
+  --gc-series-output: #D57719;
   --gc-band-opacity: 0.22;
   color-scheme: light;
 }
@@ -69,10 +69,10 @@
     --gc-color-accent: #5EA2F5;
     --gc-color-warm: #F2A65A;
     --gc-color-focus: #5EA2F5;
-    --gc-series-input: #5EA2F5;
-    --gc-series-cache-read: #264D7A;
-    --gc-series-cache-write: #B07A40;
-    --gc-series-output: #F2A65A;
+    --gc-series-input: #326BB4;
+    --gc-series-cache-read: #6698D6;
+    --gc-series-cache-write: #E4A762;
+    --gc-series-output: #FDC079;
     --gc-band-opacity: 0.28;
     color-scheme: dark;
   }
@@ -87,10 +87,10 @@
   --gc-color-accent: #5EA2F5;
   --gc-color-warm: #F2A65A;
   --gc-color-focus: #5EA2F5;
-  --gc-series-input: #5EA2F5;
-  --gc-series-cache-read: #264D7A;
-  --gc-series-cache-write: #B07A40;
-  --gc-series-output: #F2A65A;
+  --gc-series-input: #326BB4;
+  --gc-series-cache-read: #6698D6;
+  --gc-series-cache-write: #E4A762;
+  --gc-series-output: #FDC079;
   --gc-band-opacity: 0.28;
   color-scheme: dark;
 }

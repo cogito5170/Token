@@ -64,10 +64,10 @@ export const tokens = {
       "warm": "#A8530A",
       "focus": "#1F5FAD",
       "series": {
-        "input": "#1F5FAD",
-        "cache_read": "#8DB8E8",
-        "cache_write": "#F6C99A",
-        "output": "#C2650F"
+        "input": "#0F2847",
+        "cache_read": "#335C8C",
+        "cache_write": "#B7620F",
+        "output": "#D57719"
       },
       "band_opacity": 0.22
     },
@@ -81,10 +81,10 @@ export const tokens = {
       "warm": "#F2A65A",
       "focus": "#5EA2F5",
       "series": {
-        "input": "#5EA2F5",
-        "cache_read": "#264D7A",
-        "cache_write": "#B07A40",
-        "output": "#F2A65A"
+        "input": "#326BB4",
+        "cache_read": "#6698D6",
+        "cache_write": "#E4A762",
+        "output": "#FDC079"
       },
       "band_opacity": 0.28
     }
@@ -105,7 +105,19 @@ export const tokens = {
     {
       "theme": "light",
       "fg": "muted",
+      "bg": "bg",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "fg": "muted",
       "bg": "surface",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "fg": "accent",
+      "bg": "bg",
       "min": 4.5
     },
     {
@@ -117,8 +129,26 @@ export const tokens = {
     {
       "theme": "light",
       "fg": "warm",
+      "bg": "bg",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "fg": "warm",
       "bg": "surface",
       "min": 4.5
+    },
+    {
+      "theme": "light",
+      "fg": "focus",
+      "bg": "bg",
+      "min": 3
+    },
+    {
+      "theme": "light",
+      "fg": "focus",
+      "bg": "surface",
+      "min": 3
     },
     {
       "theme": "light",
@@ -129,6 +159,18 @@ export const tokens = {
     {
       "theme": "dark",
       "fg": "text",
+      "bg": "bg",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "fg": "text",
+      "bg": "surface",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "fg": "muted",
       "bg": "bg",
       "min": 4.5
     },
@@ -146,9 +188,39 @@ export const tokens = {
     },
     {
       "theme": "dark",
+      "fg": "accent",
+      "bg": "surface",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
       "fg": "warm",
       "bg": "bg",
       "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "fg": "warm",
+      "bg": "surface",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "fg": "focus",
+      "bg": "bg",
+      "min": 3
+    },
+    {
+      "theme": "dark",
+      "fg": "focus",
+      "bg": "surface",
+      "min": 3
+    },
+    {
+      "theme": "dark",
+      "fg": "border",
+      "bg": "surface",
+      "min": 1.3
     }
   ],
   "series_min_lightness_gap": 0.08,
