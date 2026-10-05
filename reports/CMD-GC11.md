@@ -1,5 +1,5 @@
 ```ga
-{"schema":"report/2","from":"infra","handled":[{"id":"CMD-GC11","rev_seen":1,"status":"done"}],"commits":["a03758c"],"tests":{"passed":41,"failed":0,"skipped":2},"change_size":"component","items":[{"id":"D1","state":"met","evidence":["infra/tests/test_infra.py::ComposeTest","infra/docker-compose.yml"]},{"id":"D2","state":"met","evidence":["infra/tests/test_infra.py::EnvExampleTest",".env.example"]},{"id":"D3","state":"met","evidence":["infra/tests/test_infra.py::SecretScanTest","infra/secret_scan.py"]},{"id":"D4","state":"met","evidence":["infra/tests/test_infra.py::MakeAndCiTest","Makefile",".github/workflows/ci.yml"]}]}
+{"schema":"report/2","from":"infra","handled":[{"id":"CMD-GC11","rev_seen":1,"status":"done"}],"commits":[{"repo":"cogito5170/Token","branch":"claude/gc11","sha":"a03758c576e76d54767759ef4f80966633da4d1b"}],"tests":{"passed":41,"failed":0,"skipped":2},"change_size":"component","items":[{"id":"D1","state":"met","evidence":["infra/tests/test_infra.py::ComposeTest","infra/docker-compose.yml"]},{"id":"D2","state":"met","evidence":["infra/tests/test_infra.py::EnvExampleTest",".env.example"]},{"id":"D3","state":"met","evidence":["infra/tests/test_infra.py::SecretScanTest","infra/secret_scan.py"]},{"id":"D4","state":"met","evidence":["infra/tests/test_infra.py::MakeAndCiTest","Makefile",".github/workflows/ci.yml"]}]}
 ```
 
 ## CMD-GC11 보고
