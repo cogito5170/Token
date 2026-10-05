@@ -1,0 +1,11 @@
+# Dev stack (skeleton; CMD-GC11 completes api/worker/web). Values come from ../.env (never committed).
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: gaconsole
+      POSTGRES_USER: gaconsole
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env}
+    ports: ["5432:5432"]
+    volumes:
+      - ../docs/schema.sql:/docker-entrypoint-initdb.d/0001_init.sql:ro

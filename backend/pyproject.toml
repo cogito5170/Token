@@ -1,0 +1,29 @@
+[project]
+name = "ga-console"
+version = "0.0.1"
+description = "ga Console: token service platform built with ga-sdk"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "pydantic>=2.7",
+    "psycopg[binary,pool]>=3.2",
+    "argon2-cffi>=23.1",
+    "pyjwt>=2.9",
+    "python-multipart>=0.0.9",
+    "cryptography>=43",
+    # pinned parts (ADR-0004): URL text and shas exactly as ga-sdk ga/_pins.py
+    "ga-sdk @ git+https://github.com/cogito5170/ga-sdk@03e8dae19132788e108602cf8b732cd670cfe6e9",
+    "rlo-sdk[sensor] @ git+https://github.com/cogito5170/rlo-SDK@0d92a3de3fed6c67eb6643859588179107977cbd",
+    "l0-telemetry @ git+https://github.com/cogito5170/Telemetry@f6c7ae26d336965d3558092517e97d37d222c4ea",
+]
+
+[project.optional-dependencies]
+dev = ["pyyaml>=6", "jsonschema>=4.18", "httpx>=0.27"]
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
