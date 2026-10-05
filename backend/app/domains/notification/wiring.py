@@ -1,10 +1,13 @@
 """Service singleton and event subscription (kept apart from api/router to avoid import cycles)."""
 from __future__ import annotations
 
+import weakref
+
 from .service import EVENT_KINDS, NotificationService
 
 _service: NotificationService | None = None
 _member_lookup = None
+_subscribed = weakref.WeakSet()  # buses that already carry the handlers
 
 
 def set_member_lookup(fn) -> None:
@@ -35,6 +38,12 @@ def get_service() -> NotificationService:
 
 
 def subscribe(bus, service: NotificationService | None = None) -> None:
-    """Subscribe one handler per event kind. The service is resolved at event time unless one is given."""
+    """Subscribe one handler per event kind. The service is resolved at event time unless one is given.
+
+    Idempotent per bus (the router import and the process assembly both call it; a second set would notify twice)."""
+    if service is None:
+        if bus in _subscribed:
+            return
+        _subscribed.add(bus)
     for name in EVENT_KINDS:
         bus.subscribe(name, lambda n, p: (service or get_service()).on_event(n, p))
