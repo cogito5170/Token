@@ -1,4 +1,13 @@
-# Dev stack (skeleton; CMD-GC11 completes api/worker/web). Values come from ../.env (never committed).
+# Dev stack. Values come from ../.env (never committed; names in ../.env.example).
+x-backend-env: &backend-env
+  DATABASE_URL: ${DATABASE_URL:?set in .env}
+  GC_JWT_SECRET: ${GC_JWT_SECRET:?set in .env}
+  GC_KEK_ID: ${GC_KEK_ID:-}
+  TELEMETRY_HASH_KEY: ${TELEMETRY_HASH_KEY:?set in .env}
+  GC_UPLOAD_DIR: ${GC_UPLOAD_DIR:-/data/uploads}
+  GC_UPLOAD_MAX_BYTES: ${GC_UPLOAD_MAX_BYTES:-}
+  GC_CORS_ORIGIN: ${GC_CORS_ORIGIN:-}
+
 services:
   db:
     image: postgres:16
@@ -9,3 +18,47 @@ services:
     ports: ["5432:5432"]
     volumes:
       - ../docs/schema.sql:/docker-entrypoint-initdb.d/0001_init.sql:ro
+      - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gaconsole -d gaconsole"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    image: python:3.12-slim
+    working_dir: /app/backend
+    command: sh -c "pip install -q -e . && uvicorn app.main:create_app --factory --host 0.0.0.0 --port 8000"
+    environment: *backend-env
+    ports: ["8000:8000"]
+    volumes:
+      - ..:/app
+      - uploads:/data/uploads
+    depends_on:
+      db: {condition: service_healthy}
+
+  worker:
+    image: python:3.12-slim
+    working_dir: /app/backend
+    command: sh -c "pip install -q -e . && python -m app.worker"
+    environment: *backend-env
+    volumes:
+      - ..:/app
+      - uploads:/data/uploads
+    depends_on:
+      db: {condition: service_healthy}
+
+  web:
+    image: node:22-slim
+    working_dir: /app/frontend
+    command: sh -c "npm install && npm run dev -- -H 0.0.0.0 -p 3000"
+    environment:
+      NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://localhost:8000}
+    ports: ["3000:3000"]
+    volumes:
+      - ..:/app
+    depends_on: [api]
+
+volumes:
+  dbdata:
+  uploads:
