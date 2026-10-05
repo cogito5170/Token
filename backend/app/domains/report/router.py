@@ -2,6 +2,8 @@
 non-member 404."""
 from __future__ import annotations
 
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
 from app.domains.identity.api import current_user
@@ -34,8 +36,16 @@ def generate_report(ws: str, body: dict, user=Depends(current_user)):
     return svc.view(_run(svc.generate, ws, body, user.id))
 
 
+def _report_id(report: str) -> str:
+    """A malformed id can never name a report: 404 here, not a PostgreSQL uuid cast error (500) in the store."""
+    try:
+        return str(uuid.UUID(report))
+    except ValueError:
+        raise HTTPException(404, detail={"code": "not_found", "message": "report not found"}) from None
+
+
 @router.get("/v1/workspaces/{ws}/reports/{report}/export", tags=["report"])
 def export_report(ws: str, report: str, format: str = Query(...), user=Depends(current_user)):
     require_member(ws, user.id)
-    ctype, text = _run(get_service().export, ws, report, format, user.id)
+    ctype, text = _run(get_service().export, ws, _report_id(report), format, user.id)
     return Response(text, media_type=ctype)

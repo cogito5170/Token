@@ -14,15 +14,21 @@ try:
 except ImportError:
     HAVE = False
 
-# Domains whose router.py does not exist yet (estimation: GC31 left HTTP out; integration, run: not built).
-# Building one makes this list stale and the test fails: remove the domain here when its router is mounted.
-UNBUILT = {"estimation", "run"}
+# Domains whose router.py does not exist yet: none (integration: CMD-GC18). Paths marked `x-later: true` in the spec
+# are not served by any domain. A new unbuilt domain goes here until its router is mounted.
+UNBUILT: set[str] = set()
 METHODS = ("get", "post", "put", "patch", "delete")
 
 
 def spec_routes():
     spec = yaml.safe_load((ROOT / "docs/api/openapi.yaml").read_text())
-    return {(p, m.upper()): v["x-domain"] for p, v in spec["paths"].items() for m in v if m in METHODS}
+    return {(p, m.upper()): v["x-domain"] for p, v in spec["paths"].items() for m in v
+            if m in METHODS and not v.get("x-later")}
+
+
+def later_routes():
+    spec = yaml.safe_load((ROOT / "docs/api/openapi.yaml").read_text())
+    return {(p, m.upper()) for p, v in spec["paths"].items() for m in v if m in METHODS and v.get("x-later")}
 
 
 @unittest.skipUnless(HAVE, "fastapi/httpx/pyyaml missing")
@@ -44,6 +50,20 @@ class AssemblyTest(unittest.TestCase):
         self.assertEqual({d for d in missing.values()}, UNBUILT, f"missing routes: {sorted(missing)}")
         built = {d for d in want.values()} - UNBUILT
         self.assertEqual({d for k, d in want.items() if k in got}, built)
+
+    def test_x_later_paths_are_not_served(self):
+        later = later_routes()
+        self.assertTrue(later, "the spec has no x-later paths any more: drop this test")
+        got = {(p, m.upper()) for p, v in self.app.openapi()["paths"].items() for m in v}
+        self.assertEqual(sorted(got & later), [])
+
+    def test_estimation_and_run_are_mounted(self):
+        want = spec_routes()
+        got = {(p, m.upper()) for p, v in self.app.openapi()["paths"].items() for m in v}
+        for dom in ("estimation", "run"):
+            routes = {k for k, d in want.items() if d == dom}
+            self.assertTrue(routes, dom)
+            self.assertEqual(sorted(routes - got), [], dom)
 
     def test_every_built_domain_is_mounted_including_simulation(self):
         paths = set(self.app.openapi()["paths"])
