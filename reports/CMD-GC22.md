@@ -24,8 +24,11 @@ ingestion 21건 통과(메모리 18 + PostgreSQL 16 실DB 3 + 라우트; 의존�
 - 이벤트 stage: queued(재시도 포함) · parsing 10 · normalizing 40 · loading 70 · analyzing 90 · done 100 · failed.
 - `load_calls` 는 한 번에 호출(전부 메모리). 매우 큰 파일은 청크 적재가 필요할 수 있다.
 
-## baseline 요청
-1. 앱 조립(또는 source 담당 항목)에서 `source.wiring.set_enqueuer(ingestion.api.enqueue)` 와 `source.wiring.subscribe()` 호출. 이 항목은 source 파일을 바꾸지 않았다.
-2. `source.api.get_upload(upload_id)`(workspace_id, source_id, declared_format, filename)를 추가해 달라. 지금 ingestion pg_store 는 `uploads` 테이블을 SQL 로 직접 읽는다(enqueue/claim).
-3. 워커는 별도 프로세스라 in-process 이벤트 버스의 `ingestion.job.finished` 가 api 프로세스(source 의 파기 예약, notification)에 닿지 않는다. 워커 프로세스에서 구독자를 붙이거나 `domain_events` 아웃박스 전달 경로를 정해 달라.
-4. 중단된 claim(워커 사망으로 parsing 에 남은 작업) 회수는 하지 않았다. 필요하면 `claimed_at` 기준 회수 항목을 추가.
+## 후속 수정 (baseline 지적: uploads 직접 조회)
+- `ingestion/pg_store.py` 의 `uploads` SQL 조회 제거. `source.api.get_upload(upload_id)`(workspace_id, source_id, declared_format, filename; 없거나 파기되면 404)를 추가하고 `IngestService` 가 그것을 쓴다(`enqueue` 의 workspace, 파이프라인의 source_id · declared_format · filename).
+- source 쪽 변경: `source/service.py`(get_upload), `source/api.py`, `source/wiring.py`(`set_enqueuer` 가 없으면 `ingestion.api.enqueue` 를 지연 import 하는 기본 enqueuer; `subscribe()` 는 router import 시 이미 호출됨). 테스트: `GetUploadTest`, `WiringTest`.
+- 경계 테스트 `ingestion.tests.test_ingestion.BoundaryTest`: ingestion 소스에 `FROM/JOIN/INTO/UPDATE uploads|sources|usage_*|workspaces|users` 가 있으면 실패.
+- 테스트: ingestion 22건 + source 14건 통과(PostgreSQL 16 포함).
+
+## baseline 요청 (남은 것)
+1. 요청 3(워커 프로세스의 `ingestion.job.finished` 가 api 프로세스에 닿는 경로 · 아웃박스)과 요청 4(parsing 에 멈춘 claim 회수)는 baseline 이 이후 항목으로 기록한다.

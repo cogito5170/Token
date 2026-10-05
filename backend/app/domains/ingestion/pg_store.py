@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from .service import MAX_REJECT_ROWS, Claimed, EventRow, IngestError, JobRow
+from .service import MAX_REJECT_ROWS, EventRow, JobRow
 
 COLS = ("id, workspace_id, upload_id, state, source_kind, parser, attempts, inserted, duplicates, rejected, "
         "last_error_code, created_at, finished_at")
@@ -31,17 +31,14 @@ class PgStore:
         c.execute("SELECT pg_notify(%s, %s)", (channel(job_id), str(seq)))
         return seq
 
-    def enqueue(self, upload_id):
+    def enqueue(self, ws, upload_id):
         with self.pool.connection() as c:
-            r = c.execute("SELECT workspace_id FROM uploads WHERE id = %s", (upload_id,)).fetchone()
-            if r is None:
-                raise IngestError("not_found", 404)
             live = c.execute("SELECT id FROM ingest_jobs WHERE upload_id = %s AND state NOT IN ('done','failed')",
                              (upload_id,)).fetchone()
             if live:
                 return str(live[0])
             jid = str(c.execute("INSERT INTO ingest_jobs (workspace_id, upload_id) VALUES (%s,%s) RETURNING id",
-                                (r[0], upload_id)).fetchone()[0])
+                                (ws, upload_id)).fetchone()[0])
             self._event(c, jid, "queued", 0)
             return jid
 
@@ -54,8 +51,7 @@ class PgStore:
             if r is None:
                 return None
             self._event(c, str(r[0]), "parsing", 10)
-            u = c.execute("SELECT source_id, declared_format FROM uploads WHERE id = %s", (r[2],)).fetchone()
-            return Claimed(_job(r), str(u[0]), u[1])
+            return _job(r)
 
     def advance(self, job_id, state, pct, counts=None):
         with self.pool.connection() as c:

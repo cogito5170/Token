@@ -67,7 +67,7 @@ class ClaimTest(unittest.TestCase):
                 if c is None:
                     return
                 with lock:
-                    got.append(c.job.id)
+                    got.append(c.id)
 
         ts = [threading.Thread(target=work, args=(f"w{i}",)) for i in range(4)]
         [t.start() for t in ts]
@@ -185,3 +185,14 @@ class StreamTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BoundaryTest(unittest.TestCase):
+    def test_ingestion_code_does_not_query_other_domains_tables(self):
+        import re
+        from pathlib import Path
+
+        pat = re.compile(r"\b(FROM|JOIN|INTO|UPDATE)\s+(uploads|sources|usage_\w+|workspaces|users)\b", re.I)
+        root = Path(__file__).resolve().parents[1]
+        bad = [f"{f.name}: {m.group(0)}" for f in root.glob("*.py") for m in pat.finditer(f.read_text())]
+        self.assertEqual(bad, [])

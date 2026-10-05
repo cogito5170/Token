@@ -8,7 +8,7 @@ import unittest
 import uuid
 from pathlib import Path
 
-from .helpers import FakeAdapter
+from .helpers import FakeAdapter, fake_get_upload
 
 DSN = os.environ.get("GC_SCHEMA_TEST_DSN")
 REPO = Path(__file__).resolve().parents[5]
@@ -65,7 +65,8 @@ class PgIngestTest(unittest.TestCase):
         db._pool = self.pool  # usage.api resolves its service from the shared pool
         registry.register(FakeAdapter())
         self.addCleanup(registry.unregister, "claude_code")
-        return IngestService(PgStore(self.pool), lambda uid: io.BytesIO(files[uid]), load_calls, lambda w, s: None)
+        return IngestService(PgStore(self.pool), lambda uid: io.BytesIO(files[uid]),
+                             fake_get_upload(files, self.ws, self.src), load_calls, lambda w, s: None)
 
     def test_two_workers_never_claim_one_job_and_pipeline_persists(self):
         ups = self._upload(12)

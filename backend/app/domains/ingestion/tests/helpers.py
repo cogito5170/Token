@@ -31,6 +31,15 @@ class FakeAdapter:
                                                 input_tokens=int(i), output_tokens=int(o)))
 
 
+def fake_get_upload(files, ws=WS, src=SRC):
+    """Stands in for source.api.get_upload (raises like it does for a missing upload)."""
+    def get_upload(uid):
+        if uid not in files:
+            raise LookupError(uid)
+        return {"workspace_id": ws, "source_id": src, "declared_format": None, "filename": "f.jsonl"}
+    return get_upload
+
+
 def fake_loader():
     """Stands in for usage.api.load_calls: dedupe on dedupe_key, unknown models rejected (no content)."""
     seen = set()
@@ -54,8 +63,6 @@ def make(files: dict[str, bytes], max_attempts=3):
     """-> (service, store, None); every file is an upload with its own queued job."""
     store = MemoryStore()
     registry.register(FakeAdapter())
-    svc = IngestService(store, lambda uid: io.BytesIO(files[uid]), fake_loader(), lambda ws, sid: None,
-                        max_attempts=max_attempts)
-    for uid in files:
-        store.register_upload(uid, WS, SRC)
+    svc = IngestService(store, lambda uid: io.BytesIO(files[uid]), fake_get_upload(files), fake_loader(),
+                        lambda ws, sid: None, max_attempts=max_attempts)
     return svc, store, None

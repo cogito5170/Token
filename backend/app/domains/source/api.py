@@ -1,6 +1,6 @@
 """source.api: the public surface other domains import.
 
-    from app.domains.source.api import open_upload, get_source
+    from app.domains.source.api import open_upload, get_upload, get_source
     with open_upload(upload_id) as f: ...        # raises HTTPException 404 when missing or purged
 """
 from __future__ import annotations
@@ -28,6 +28,14 @@ def create_upload(ws_id: str, user_id: str, source_id: str, filename: str, file:
 def open_upload(upload_id: str) -> BinaryIO:
     try:
         return get_service().open_upload(upload_id)
+    except SourceError as e:
+        raise http_error(e) from None
+
+
+def get_upload(upload_id: str) -> dict:
+    """{workspace_id, source_id, declared_format, filename}; raises HTTPException 404 when missing or purged."""
+    try:
+        return get_service().get_upload(upload_id)
     except SourceError as e:
         raise http_error(e) from None
 

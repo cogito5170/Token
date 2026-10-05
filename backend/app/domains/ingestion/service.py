@@ -1,4 +1,4 @@
-"""Ingestion use cases: job state machine, pipeline, retries, progress events. Store, upload opener, loader and
+"""Ingestion use cases: job state machine, pipeline, retries, progress events. Store, upload opener/metadata, loader and
 publisher are injected so the pipeline runs without a database.
 
 States: queued -> parsing -> normalizing -> loading -> analyzing -> done | failed. A failed attempt goes back to
@@ -47,13 +47,6 @@ class JobRow:
 
 
 @dataclass
-class Claimed:
-    job: JobRow
-    source_id: str
-    declared_format: str | None = None
-
-
-@dataclass
 class EventRow:
     seq: int
     stage: str
@@ -62,8 +55,8 @@ class EventRow:
 
 
 class Store(Protocol):
-    def enqueue(self, upload_id: str) -> str: ...
-    def claim(self, worker: str) -> Claimed | None: ...
+    def enqueue(self, workspace_id: str, upload_id: str) -> str: ...
+    def claim(self, worker: str) -> JobRow | None: ...
     def advance(self, job_id: str, state: str, pct: int, counts: dict | None = None) -> int: ...
     def set_format(self, job_id: str, kind: str, parser: str) -> None: ...
     def add_rejects(self, job_id: str, rejects: list[tuple[int, str]]) -> None: ...
@@ -80,15 +73,10 @@ class MemoryStore:
 
     def __init__(self) -> None:
         self.lock = threading.Condition()
-        self.uploads: dict[str, tuple[str, str, str | None]] = {}
-        self.src: dict[str, tuple[str, str | None]] = {}
         self.rows: dict[str, JobRow] = {}
         self.ev: dict[str, list[EventRow]] = {}
         self.rej: dict[str, list[tuple[int, str]]] = {}
         self.lines: dict[str, int] = {}
-
-    def register_upload(self, upload_id: str, ws: str, source_id: str, declared: str | None = None) -> None:
-        self.uploads[upload_id] = (ws, source_id, declared)
 
     def _event(self, j: JobRow, stage: str, pct: int, counts: dict | None) -> int:
         evs = self.ev.setdefault(j.id, [])
@@ -96,14 +84,11 @@ class MemoryStore:
         self.lock.notify_all()
         return len(evs)
 
-    def enqueue(self, upload_id):
+    def enqueue(self, ws, upload_id):
         with self.lock:
-            if upload_id not in self.uploads:
-                raise IngestError("not_found", 404)
             for j in self.rows.values():
                 if j.upload_id == upload_id and j.state not in TERMINAL:
                     return j.id
-            ws = self.uploads[upload_id][0]
             j = JobRow(str(uuid.uuid4()), ws, upload_id, created_at=datetime.now(timezone.utc))
             self.rows[j.id] = j
             self._event(j, "queued", 0, None)
@@ -115,8 +100,7 @@ class MemoryStore:
                 if j.state == "queued":
                     j.state, j.attempts = "parsing", j.attempts + 1
                     self._event(j, "parsing", STAGES["parsing"], None)
-                    ws, src, fmt = self.uploads[j.upload_id]
-                    return Claimed(JobRow(**j.__dict__), src, fmt)
+                    return JobRow(**j.__dict__)
         return None
 
     def advance(self, job_id, state, pct, counts=None):
@@ -171,26 +155,31 @@ class MemoryStore:
 
 
 class IngestService:
-    def __init__(self, store: Store, open_upload: Callable, load_calls: Callable, get_source: Callable,
-                 publish: Callable[[str, dict], object] | None = None, max_attempts: int = MAX_ATTEMPTS) -> None:
-        self.store, self.open_upload, self.load_calls, self.get_source = store, open_upload, load_calls, get_source
+    def __init__(self, store: Store, open_upload: Callable, get_upload: Callable, load_calls: Callable,
+                 get_source: Callable, publish: Callable[[str, dict], object] | None = None,
+                 max_attempts: int = MAX_ATTEMPTS) -> None:
+        self.store, self.open_upload, self.get_upload = store, open_upload, get_upload
+        self.load_calls, self.get_source = load_calls, get_source
         self.publish = publish or (lambda n, p: 0)
         self.max_attempts = max_attempts
 
     # ---- enqueue (hook for source: Upload.job_id) ----
     def enqueue(self, upload_id: str) -> str:
-        return self.store.enqueue(upload_id)
+        try:
+            ws = self.get_upload(upload_id)["workspace_id"]
+        except Exception:  # source.api raises HTTPException 404 for a missing upload
+            raise IngestError("not_found", 404) from None
+        return self.store.enqueue(ws, upload_id)
 
     # ---- worker side ----
     def run_one(self, worker: str) -> str | None:
         """Claim and process one job; returns its id, or None when the queue is empty."""
-        c = self.store.claim(worker)
-        if c is None:
+        j = self.store.claim(worker)
+        if j is None:
             return None
-        j = c.job
         self._emit(j, "parsing", STAGES["parsing"])
         try:
-            self._pipeline(c)
+            self._pipeline(j)
         except IngestError as e:
             self._failed(j, e.code)
         except Exception:  # message may hold content: keep only a fixed code
@@ -212,12 +201,12 @@ class IngestService:
             self.publish("ingestion.job.failed", {"job_id": j.id, "workspace_id": j.workspace_id,
                                                    "upload_id": j.upload_id, "error_code": code})
 
-    def _pipeline(self, c: Claimed) -> None:
-        j, st = c.job, self.store
+    def _pipeline(self, j: JobRow) -> None:
+        st = self.store
+        meta = self.get_upload(j.upload_id)
         with self.open_upload(j.upload_id) as f:
             head = f.read(4096)
-            name = ""
-            adapter = self._detect(c.declared_format, name, head)
+            adapter = self._detect(meta.get("declared_format"), meta.get("filename") or "", head)
             st.set_format(j.id, adapter.kind, adapter.parser)
             f.seek(0)
             calls, lines, sessions, tasks, rejects = [], [], {}, {}, []
@@ -233,11 +222,11 @@ class IngestService:
                     tasks[item.key] = item.task
         st.advance(j.id, "normalizing", STAGES["normalizing"])
         self._emit(j, "normalizing", STAGES["normalizing"])
-        src = self.get_source(j.workspace_id, c.source_id)
+        src = self.get_source(j.workspace_id, meta["source_id"])
         project_id = getattr(src, "project_id", None) if src else None
         st.advance(j.id, "loading", STAGES["loading"])
         self._emit(j, "loading", STAGES["loading"])
-        res = self.load_calls(j.workspace_id, project_id, c.source_id, j.id, calls, sessions, tasks) if calls else None
+        res = self.load_calls(j.workspace_id, project_id, meta["source_id"], j.id, calls, sessions, tasks) if calls else None
         if res is not None:
             rejects += [(lines[r["index"]], r["code"]) for r in res.rejected]
         counts = {"inserted": res.inserted if res else 0, "duplicates": res.duplicates if res else 0,

@@ -11,12 +11,12 @@ def get_service() -> IngestService:
     if _service is None:
         from app.core import events
         from app.core.db import get_pool
-        from app.domains.source.api import get_source, open_upload
+        from app.domains.source.api import get_source, get_upload, open_upload
         from app.domains.usage.api import load_calls
 
         from .pg_store import PgStore
 
-        _service = IngestService(PgStore(get_pool()), open_upload, load_calls, get_source, publish=events.bus.publish)
+        _service = IngestService(PgStore(get_pool()), open_upload, get_upload, load_calls, get_source, publish=events.bus.publish)
     return _service
 
 
