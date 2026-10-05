@@ -56,6 +56,26 @@ describe("overview", () => {
     const b = { id: "b", scope: "workspace", period: "month", measure: "list", limit_microusd: 2000, thresholds: [], used: { list: m(500), cli: m(null) } } as Schemas["Budget"];
     expect(budgetUsePermille({ summary: fixtures.usageSummary, budgets: [b] }).value).toBe(250);
   });
+  it("pins the provenance chip of every overview tile", async () => {
+    const { client } = setup({ [`GET /v1/workspaces/{ws}/budgets`]: () => [] });
+    const html = renderToStaticMarkup(createElement(OverviewView, { data: await loadOverview(client, WS) }));
+    const chips = (label: string) => {
+      const m = new RegExp(`<section class="gc-kpi" aria-label="${label}">.*?</section>`).exec(html);
+      expect(m, label).not.toBeNull();
+      return [...m![0].matchAll(/data-provenance="(\w+)"/g)].map((x) => x[1]);
+    };
+    expect(chips("총 토큰")).toEqual(["MEASURED"]);
+    expect(chips("비용")).toEqual(["CALCULATED", "MEASURED"]);
+    expect(chips("맞힌 작업 수")).toEqual(["MEASURED"]);
+    expect(chips("맞힌 작업당 비용")).toEqual(["CALCULATED"]);
+    expect(chips("예산 사용률")).toEqual(["CALCULATED"]);
+  });
+  it("budget use stays CALCULATED, from a budget or from the tile", () => {
+    const m = (v: number | null): Schemas["Metric"] => ({ value: v, unit: "microusd", provenance: "CALCULATED" });
+    const b = { id: "b", scope: "workspace", period: "month", measure: "list", limit_microusd: 2000, thresholds: [], used: { list: m(500), cli: m(null) } } as Schemas["Budget"];
+    expect(budgetUsePermille({ summary: fixtures.usageSummary, budgets: [b] }).provenance).toBe("CALCULATED");
+    expect(budgetUsePermille({ summary: fixtures.usageSummary, budgets: [] }).provenance).toBe("CALCULATED");
+  });
   it("trend plots total_tokens, cost_list, cost_cli with cli on the cost axis", () => {
     const o = trendOption([ser("total_tokens", [1, 2]), ser("cost_list", [3, 4], "microusd", "CALCULATED"), ser("cost_cli", [3, 4], "microusd"), ser("other", [1, 1])]) as { series: { name: string; yAxisIndex: number }[] };
     expect(o.series.map((s) => [s.name, s.yAxisIndex])).toEqual([["토큰", 0], ["비용(정가)", 1], ["비용(CLI)", 1]]);

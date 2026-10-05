@@ -1,5 +1,5 @@
 ```ga
-{"schema":"report/2","from":"frontend","handled":[{"id":"CMD-GC41","rev_seen":1,"status":"done"}],"commits":[{"repo":"cogito5170/Token","branch":"claude/gc41","sha":"e34f1f1738747ddf5d17b5608b07c86c879326e7"}],"tests":{"passed":10,"failed":0,"skipped":0},"change_size":"component","items":[{"id":"D1","state":"met","evidence":["frontend/tests/usage/usage.test.ts: each screen's loader calls only its listed paths (fake API spy)"]},{"id":"D2","state":"met","evidence":["overview renders CostPair (list and cli side by side) for cost and cost per correct task"]},{"id":"D3","state":"met","evidence":["cli coverage chip '부분 n%' appears below 1000 permille and is absent at 1000 (test)"]}]}
+{"schema":"report/2","from":"frontend","handled":[{"id":"CMD-GC41","rev_seen":1,"status":"done"}],"commits":[{"repo":"cogito5170/Token","branch":"claude/gc41","sha":"e34f1f1738747ddf5d17b5608b07c86c879326e7"}],"tests":{"passed":12,"failed":0,"skipped":0},"change_size":"component","items":[{"id":"D1","state":"met","evidence":["frontend/tests/usage/usage.test.ts: each screen's loader calls only its listed paths (fake API spy)"]},{"id":"D2","state":"met","evidence":["overview renders CostPair (list and cli side by side) for cost and cost per correct task"]},{"id":"D3","state":"met","evidence":["cli coverage chip '부분 n%' appears below 1000 permille and is absent at 1000 (test)"]}]}
 ```
 
 ## 한 일
@@ -11,7 +11,7 @@
 frontend/src/app/(app)/{overview,token-mix,call-size}/**, frontend/tests/usage/usage.test.ts.
 
 ## 테스트
-vitest tests/usage 10 통과, tsc 통과, next build 통과, make check / make test 통과.
+vitest tests/usage 12 통과(타일 출처 고정 테스트 추가), tsc 통과, next build 통과, make check / make test 통과.
 
 ## 열린 문제
 - 화면은 워크스페이스 ID 를 sessionStorage(shell 스위치가 설정)에서 읽는다. /workspaces 를 따로 부르지 않기 위함.
