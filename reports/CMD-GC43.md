@@ -1,5 +1,5 @@
 ```ga
-{"schema":"report/2","from":"frontend","handled":[{"id":"CMD-GC43","rev_seen":1,"status":"done"}],"commits":[{"repo":"cogito5170/Token","branch":"claude/gc43","sha":"3184d274ce3f5442e53c570385265acb0d8fbfdc"}],"tests":{"passed":8,"failed":0,"skipped":0},"change_size":"implementation","items":[{"id":"D1","state":"met","evidence":["frontend/tests/ops/ingest.test.ts: follows a scripted stream to done; resumes with Last-Event-ID after drop"]},{"id":"D2","state":"met","evidence":["frontend/tests/ops/ingest.test.ts: audit access admin-only; nav hides /audit for non-admin"]}]}
+{"schema":"report/2","from":"frontend","handled":[{"id":"CMD-GC43","rev_seen":1,"status":"done"}],"commits":[{"repo":"cogito5170/Token","branch":"claude/gc43","sha":"9982cc8b709a7c201611ba21099d1757ae17175b"}],"tests":{"passed":8,"failed":0,"skipped":0},"change_size":"implementation","items":[{"id":"D1","state":"met","evidence":["frontend/tests/ops/ingest.test.ts: follows a scripted stream to done; resumes with Last-Event-ID after drop"]},{"id":"D2","state":"met","evidence":["frontend/tests/ops/ingest.test.ts: audit access admin-only; nav hides /audit for non-admin"]}]}
 ```
 
 ## 한 일
