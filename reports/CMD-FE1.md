@@ -19,3 +19,6 @@
 ## 다음 세션이 알 것
 - 컴포넌트는 서버 렌더 가능한(훅 없는) 순수 컴포넌트다. 값은 호출자가 포맷해서 넘긴다(KpiTile value 는 문자열).
 - 스냅샷 갱신: `cd frontend && npx playwright test tests/components --update-snapshots`.
+
+## 갱신 (baseline 요청 반영)
+- \`frontend/package.json\`·lockfile 에 \`@playwright/test\` 1.56.1, \`@axe-core/playwright\` 4.13.0, \`esbuild\` 0.28.2 고정 추가, 스크립트 \`test:components\`. 저장소 루트에서 \`npm --prefix frontend ci && npm --prefix frontend run test:components\` 24 passed. 스냅샷은 linux chromium 기준(PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers). 갤러리 라우트 요청은 GC41 에 남김.
