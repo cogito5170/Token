@@ -2,6 +2,8 @@
 
 원본은 `design/tokens.json` 하나다(소유: design). 색 · 크기 · 시간을 다른 곳에 직접 쓰지 않는다. 계약 문서는 `docs/ui-design.md` 1–3 절.
 
+라이브 모니터의 시각 언어(신호 대응표)는 `design/encoding.json`, 움직임 규칙은 `design/motion.md` 에 있다.
+
 ## 구조
 
 | 키 | 내용 | CSS 변수 규칙 |
