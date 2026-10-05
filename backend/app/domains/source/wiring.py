@@ -16,6 +16,13 @@ def set_enqueuer(fn) -> None:
     _enqueue, _service = fn, None
 
 
+def _default_enqueue(upload_id: str):
+    """Ingestion's hook, resolved lazily (ingestion depends on source; this is the one reverse edge, api only)."""
+    from app.domains.ingestion.api import enqueue
+
+    return enqueue(upload_id)
+
+
 def get_service() -> SourceService:
     global _service
     if _service is None:
@@ -26,7 +33,7 @@ def get_service() -> SourceService:
 
         s = load_settings()
         _service = SourceService(PgStore(get_pool()), FileObjectStore(s.upload_dir), s.upload_max_bytes,
-                                 publish=events.bus.publish, enqueue=_enqueue)
+                                 publish=events.bus.publish, enqueue=_enqueue or _default_enqueue)
     return _service
 
 
