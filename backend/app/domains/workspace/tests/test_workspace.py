@@ -23,6 +23,15 @@ class BoundaryTest(unittest.TestCase):
                 call()
             self.assertEqual(c.exception.status, 404)
 
+    def test_member_ids_lists_all_members(self):
+        svc, *_ = make()
+        w, _ = svc.create_workspace(U1, "Team A")
+        svc.add_member(w.id, U1, "b@example.com", "viewer")
+        other, _ = svc.create_workspace(U3, "Team B")
+        self.assertEqual(sorted(svc.member_ids(w.id)), [U1, U2])
+        self.assertEqual(svc.member_ids(other.id), [U3])
+        self.assertEqual(svc.member_ids("not-a-uuid"), [])
+
     def test_malformed_or_unknown_ws_is_404(self):
         svc, *_ = make()
         for ws in ("not-a-uuid", "11111111-1111-4111-8111-111111111111"):

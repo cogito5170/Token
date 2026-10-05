@@ -1,0 +1,2 @@
+date,model,project_id,input_tokens,input_cached_tokens,output_tokens
+2026-03-02,gpt-x,proj_1,1000,400,50

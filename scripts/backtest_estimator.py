@@ -13,6 +13,7 @@ micro-USD), the P10-P90 coverage, and a naive global-median baseline for contras
 """
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -31,6 +32,7 @@ def load(path: Path) -> list[dict]:
             continue
         rows.append({
             "run_id": r["run_id"],
+            "raw": r,
             "group": (r["arm"], r["model"], r["mode"]),
             "mode": r["mode"],
             "tokens": int(r["total_tokens"]),
@@ -78,13 +80,57 @@ def score(rows: list[dict], predictor) -> dict:
     return out
 
 
+def app_scorer(rows: list[dict]) -> dict:
+    """Leave-one-out score of the app estimator (backend/app/domains/estimation): each run is predicted from a global
+    prior built from the *other* runs only, so the evaluated run is never fitted on."""
+    sys.path.insert(0, str(ROOT / "backend"))
+    from app.domains.estimation.estimator import estimate
+    from app.domains.estimation.prior import to_evidence
+    ev = [to_evidence(r["raw"], i) for i, r in enumerate(rows)]
+    preds = []
+    for i, r in enumerate(rows):
+        preds.append(estimate(ev[i].features, [], ev[:i] + ev[i + 1:]).ranges)
+    out = {}
+    for field, qty in (("tokens", "total_tokens"), ("cost_microusd", "cost_list_microusd")):
+        ape, covered = [], 0
+        for r, rg in zip(rows, preds):
+            y = r[field]
+            if y <= 0:
+                continue
+            q = rg[qty]
+            ape.append(abs(y - q["p50"]) / y)
+            covered += q["p10"] <= y <= q["p90"]
+        out[field] = {"n": len(ape), "mape_pct": round(100 * sum(ape) / len(ape), 2),
+                      "coverage_p10_p90_pct": round(100 * covered / len(ape), 1)}
+    cli = []
+    for r, rg in zip(rows, preds):
+        y = round(float(r["raw"]["quota_cli_usd"]) * 1_000_000)
+        if y > 0:
+            cli.append((abs(y - rg["cost_cli_microusd"]["p50"]) / y, rg["cost_cli_microusd"]["p10"] <= y <= rg["cost_cli_microusd"]["p90"]))
+    out["cost_cli_microusd"] = {"n": len(cli), "mape_pct": round(100 * sum(a for a, _ in cli) / len(cli), 2),
+                                "coverage_p10_p90_pct": round(100 * sum(c for _, c in cli) / len(cli), 1)}
+    return out
+
+
 def main() -> int:
-    path = Path(sys.argv[1]) if len(sys.argv) > 1 else RUNS
+    ap = argparse.ArgumentParser()
+    ap.add_argument("path", nargs="?", default=str(RUNS))
+    ap.add_argument("--estimator", choices=("baseline", "app"), default="baseline")
+    args = ap.parse_args()
+    path = Path(args.path)
     rows = load(path)
     if not rows:
         print("no valid runs", file=sys.stderr)
         return 1
     base = score(rows, evidence)
+    if args.estimator == "app":
+        app = app_scorer(rows)
+        print(f"FINAL_TASK backtest (app estimator, leave-one-out): {len(rows)} valid runs")
+        for name, s in (("baseline", base), ("app", app)):
+            print(f"  {name:10s} " + "  ".join(f"{k}: MAPE {v['mape_pct']:7.2f}% cov {v['coverage_p10_p90_pct']:5.1f}%"
+                                              for k, v in s.items()))
+        print(json.dumps({"schema": "backtest/1", "runs": len(rows), "baseline": base, "app": app}, sort_keys=True))
+        return 0 if app["tokens"]["mape_pct"] < base["tokens"]["mape_pct"] else 2
     naive = score(rows, lambda rs, i: [r for j, r in enumerate(rs) if j != i])
     print(f"FINAL_TASK backtest: {len(rows)} valid runs from {path.relative_to(ROOT) if path.is_relative_to(ROOT) else path}")
     for name, s in (("baseline (group median, LOO)", base), ("naive (global median, LOO)", naive)):
