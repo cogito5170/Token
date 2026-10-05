@@ -1,0 +1,94 @@
+{
+ "dropped_marks": [],
+ "edges": [
+  {
+   "a": "n1",
+   "b": "n2",
+   "messages": 3,
+   "pi_permille": 750,
+   "weight_px": 5
+  }
+ ],
+ "figures": [
+  {
+   "item": null,
+   "lightness_pct": 30,
+   "node": "n1",
+   "notches": 0,
+   "outcome_mark": "solid_dot",
+   "ring": "verified",
+   "ring_shape": "closed",
+   "role": "builder",
+   "shape": "circle",
+   "shape_index": 0,
+   "state": "retired",
+   "tether_to": null,
+   "word": "done"
+  },
+  {
+   "item": null,
+   "lightness_pct": 30,
+   "node": "n2",
+   "notches": 0,
+   "outcome_mark": "solid_dot",
+   "ring": "none",
+   "ring_shape": "absent",
+   "role": "reviewer",
+   "shape": "rounded_square",
+   "shape_index": 1,
+   "state": "retired",
+   "tether_to": null,
+   "word": "done"
+  }
+ ],
+ "mood": {
+  "active": "all_done",
+  "all_done": true,
+  "collaboration": true,
+  "lightness_delta_pct": 0,
+  "pace": 27,
+  "stall": false,
+  "tempo_permille": 0,
+  "tension": false
+ },
+ "recording": {
+  "path": "fixtures/monitor/recording.jsonl",
+  "sha256": "6a435a82706db0156e9f1dba931d1d72409f3765110b1b6bcb42e1e19e88033f"
+ },
+ "round": 3,
+ "schema": "gc-golden-scene/1",
+ "stage_word": "done",
+ "t_ms": 9000,
+ "tiles": [
+  {
+   "band": "done_shelf",
+   "holder": null,
+   "id": "w1",
+   "parent": null,
+   "role": "builder",
+   "shape": "filled",
+   "shelf": "done"
+  },
+  {
+   "band": "done_shelf",
+   "holder": null,
+   "id": "w2",
+   "parent": null,
+   "role": "reviewer",
+   "shape": "filled",
+   "shelf": "done"
+  },
+  {
+   "band": "done_shelf",
+   "holder": null,
+   "id": "w3",
+   "parent": "w1",
+   "role": "builder",
+   "shape": "filled",
+   "shelf": "done"
+  }
+ ],
+ "words": [
+  "done"
+ ]
+}
