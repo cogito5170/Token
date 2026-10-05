@@ -1,0 +1,16 @@
+{
+  "name": "ga-console-desktop",
+  "private": true,
+  "version": "0.0.1",
+  "main": "src/main.js",
+  "scripts": {
+    "test": "playwright test",
+    "build:renderer": "node scripts/build-renderer.mjs",
+    "start": "electron . --ga-dir",
+    "pack": "node scripts/pack.mjs"
+  },
+  "devDependencies": {
+    "electron": "44.5.1",
+    "@playwright/test": "1.56.1"
+  }
+}
