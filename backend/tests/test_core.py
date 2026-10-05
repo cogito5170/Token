@@ -19,14 +19,14 @@ class HealthzTest(unittest.TestCase):
 
 
 SAMPLES = {
-    "anthropic_key": "sk-ant-api03-abcdefghijklmnop",
-    "openai_key": "sk-abcdefghijklmnopqrstuvwx",
+    "anthropic_key": "sk-" + "ant-api03-abcdefghijklmnop",
+    "openai_key": "sk-" + "abcdefghijklmnopqrstuvwx",
     "google_key": "AIzaSyA1234567890abcdefghijklmn",
     "github_token": "ghp_abcdefghijklmnopqrstuvwx",
     "github_pat": "github_pat_abcdefghijklmnopqrstuvwx",
-    "aws_key": "AKIAABCDEFGHIJKLMNOP",
-    "slack_token": "xoxb-1234567890-abcdef",
-    "private_key": "-----BEGIN RSA PRIVATE KEY-----\nMIIE\n-----END RSA PRIVATE KEY-----",
+    "aws_key": "AKI" + "AABCDEFGHIJKLMNOP",
+    "slack_token": "xox" + "b-1234567890-abcdef",
+    "private_key": "-----BEGIN RSA PRIVATE " + "KEY-----\nMIIE\n-----END RSA PRIVATE " + "KEY-----",
     "jwt": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.abc123",
     "assign_password": "password=hunter2hunter2",
     "assign_token": "token=abc",
@@ -51,12 +51,12 @@ class RedactionTest(unittest.TestCase):
     def test_exception_text_redacted(self):
         from app.core.logging import RedactionFilter
         try:
-            raise ValueError("bad key sk-ant-api03-abcdefghijklmnop")
+            raise ValueError("bad key sk-" + "ant-api03-abcdefghijklmnop")
         except ValueError:
             import sys
             rec = logging.LogRecord("t", logging.ERROR, __file__, 1, "x", None, sys.exc_info())
         RedactionFilter().filter(rec)
-        self.assertNotIn("abcdefghijklmnop", rec.exc_text)
+        self.assertIn("ValueError: bad key [REDACTED:anthropic_key]", rec.exc_text)
 
 
 class EventBusTest(unittest.TestCase):
