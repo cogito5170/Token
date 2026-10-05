@@ -234,6 +234,21 @@ class ProviderCredentialHttpTest(unittest.TestCase):
             self.assertEqual(k, key)
         self.assert_absent(key, self.cap.lines)
 
+    def test_ciphertext_copied_to_another_row_does_not_open(self):
+        from fastapi import HTTPException
+        from app.domains.integration import api
+        a = self.store(fake_key(), provider="gemini").json()["id"]
+        b = self.store(fake_key(), provider="gemini").json()["id"]
+        r = subprocess.run(["psql", self.dsn, "-v", "ON_ERROR_STOP=1", "-qAt", "-c",
+                            "UPDATE provider_credentials t SET ciphertext=s.ciphertext, nonce=s.nonce, "
+                            f"wrapped_dek=s.wrapped_dek, kek_id=s.kek_id FROM provider_credentials s "
+                            f"WHERE s.id='{a}' AND t.id='{b}'"], capture_output=True, text=True, timeout=60)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        with self.assertRaises(HTTPException) as c:
+            with api.use_credential(self.ws, b):
+                self.fail("another row's ciphertext opened")
+        self.assertEqual(c.exception.status_code, 500)
+
     def test_no_kek_configured_is_503_and_stores_nothing(self):
         from app.domains.integration import wiring
         key = fake_key()

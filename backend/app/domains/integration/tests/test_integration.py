@@ -143,6 +143,16 @@ class EnvelopeTest(Base):
         with self.assertRaises(CredentialError):
             self.plain(WS, a.id)
 
+    def test_ciphertext_copied_to_another_row_of_same_workspace_and_provider_fails(self):
+        from app.domains.integration.service import CredentialError
+        _, a = self.put(provider="openai")
+        _, b = self.put(provider="openai")
+        self.store.rows[b.id] = replace(b, ciphertext=a.ciphertext, nonce=a.nonce, wrapped_dek=a.wrapped_dek,
+                                        kek_id=a.kek_id)
+        with self.assertRaises(CredentialError) as c:
+            self.plain(WS, b.id)
+        self.assertEqual(c.exception.code, "decrypt_failed")
+
     def test_kek_rotation_keeps_old_rows_readable(self):
         key, old = self.put()
         self.env.update(GC_KEK_ID="t2", GC_KEK_t2=kek())
