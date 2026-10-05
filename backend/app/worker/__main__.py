@@ -9,6 +9,15 @@ import time
 POLL_S = 1.0
 
 
+def banner(me: str, poll_s: float) -> str:
+    """Return a one‑line status message indicating the worker is ready.
+
+    The message includes the phrase ``worker ready`` and the worker's name
+    ``me``.  Optionally it can mention the poll interval ``poll_s``.
+    """
+    return f"worker ready – {me} (poll every {poll_s}s)"
+
+
 def main() -> None:
     from app.core.config import load_settings
     from app.core.db import open_pool
@@ -22,6 +31,7 @@ def main() -> None:
     wire_worker()
     svc = get_service()
     me = f"{socket.gethostname()}:{os.getpid()}"
+    print(banner(me, POLL_S), flush=True)
     stop = []
     for sig in (signal.SIGINT, signal.SIGTERM):
         signal.signal(sig, lambda *_: stop.append(1))
