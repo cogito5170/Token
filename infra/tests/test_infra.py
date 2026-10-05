@@ -35,7 +35,7 @@ class EnvExampleTest(unittest.TestCase):
         for line in (REPO / ".env.example").read_text().splitlines():
             if not line.strip() or line.lstrip().startswith("#"):
                 continue
-            self.assertRegex(line, r"^[A-Z][A-Z0-9_]*=$", f"value present: {line.split('=')[0]}")
+            self.assertRegex(line, r"^([A-Z][A-Z0-9_]*|GC_KEK_<id>)=$", f"value present: {line.split('=')[0]}")
             names.append(line[:-1])
         from backend.app.core import config
         for n in config.ENV_VARS:

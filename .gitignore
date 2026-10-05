@@ -5,3 +5,6 @@ __pycache__/
 node_modules/
 .next/
 .ga/
+next-env.d.ts
+*.egg-info/
+tests/e2e/node_modules

@@ -9,6 +9,7 @@ ENV_VARS = (
     "GC_CORS_ORIGIN",
 )
 SECRET_ENV_VARS = ("DATABASE_URL", "GC_JWT_SECRET", "TELEMETRY_HASH_KEY")
+KEK_ENV_PREFIX = "GC_KEK_"  # GC_KEK_<id> carries key material; GC_KEK_ID only names the active id
 
 
 import os
@@ -36,3 +37,15 @@ def load_settings(env=None) -> Settings:
         upload_max_bytes=int(e.get("GC_UPLOAD_MAX_BYTES", str(200 * 1024 * 1024))),
         cors_origin=e.get("GC_CORS_ORIGIN"),
     )
+
+
+def dump(env=None) -> dict[str, str]:
+    """Configuration for logs/diagnostics: the app's variables (known names and GC_*), secrets redacted, and every
+    variable with the GC_KEK_ prefix left out (key material, and the id that names it)."""
+    e = os.environ if env is None else env
+    out = {}
+    for n in sorted(e):
+        if n.startswith(KEK_ENV_PREFIX) or not (n in ENV_VARS or n.startswith("GC_")):
+            continue
+        out[n] = "<redacted>" if n in SECRET_ENV_VARS or n.endswith(("_SECRET", "_KEY", "_PASSWORD")) else e[n]
+    return out

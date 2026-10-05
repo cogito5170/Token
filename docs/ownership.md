@@ -68,6 +68,8 @@
 | `README.md` | infra | no |
 | `.env.example` | infra | no |
 | `.gitignore` | infra | no |
+| `scripts/dev_env.py` | infra | no |
+| `scripts/e2e_stack.py` | infra | no |
 
 ## 도메인 → 역할 (요약)
 

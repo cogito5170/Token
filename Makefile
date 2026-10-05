@@ -1,7 +1,23 @@
 PY ?= python3
 COMPOSE ?= docker compose -f infra/docker-compose.yml --env-file .env
 
-.PHONY: test check backtest schema-check db-up db-down migrate secret-scan
+.PHONY: dev dev-down dev-env dev-migrate test check backtest schema-check db-up db-down migrate secret-scan
+
+dev-env:         ## create ./.env with generated dev-only values (refuses to overwrite)
+	@test -f .env || $(PY) scripts/dev_env.py
+
+dev: dev-env     ## local stack: db, api, worker, web at http://localhost:3000
+	$(COMPOSE) up -d --wait db
+	$(MAKE) dev-migrate
+	$(COMPOSE) up -d api worker web
+	@echo "web http://localhost:3000   api http://localhost:8000/healthz   (first start installs packages; docker compose logs -f)"
+
+dev-migrate:     ## apply backend/migrations/*.sql inside the db container when the schema is missing
+	@$(COMPOSE) exec -T db psql -U gaconsole -d gaconsole -qAt -c 'select 1 from users limit 1' >/dev/null 2>&1 || { \
+		for f in $$(ls backend/migrations/*.sql | sort); do echo "apply $$f"; $(COMPOSE) exec -T db psql -U gaconsole -d gaconsole -v ON_ERROR_STOP=1 -q < $$f || exit 1; done; }
+
+dev-down:        ## stop the local stack (data volume kept)
+	$(COMPOSE) down
 
 test:            ## unit tests (runner: unittest)
 	$(PY) -m unittest discover -s tests -t .

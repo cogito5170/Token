@@ -31,6 +31,11 @@ def create_app():
 
     app = FastAPI(title="ga Console", lifespan=lifespan)
     errors.install(app)
+    origin = load_settings().cors_origin
+    if origin:  # the browser app on another origin (GC_CORS_ORIGIN); credentials: the refresh token is a cookie
+        from fastapi.middleware.cors import CORSMiddleware
+        app.add_middleware(CORSMiddleware, allow_origins=[origin], allow_credentials=True,
+                           allow_methods=["*"], allow_headers=["*"])
 
     @app.get("/healthz")
     def healthz():
