@@ -132,3 +132,47 @@ worker loop: claim_next()  (SELECT … FOR UPDATE SKIP LOCKED on ingest_jobs whe
 | What-if | `simulations` | `assumptions` jsonb (필수, 비어 있으면 거부), `basis` jsonb (기간, 호출 수, 가격표 버전, 개인 통계 버전), 결과 범위 jsonb, `provenance='SIMULATED'` |
 
 자세한 수식은 consulting.md.
+
+## 7. 라이브 모니터 읽기 모델 (Run 도메인, 1b)
+
+ga 0.6 이 남기는 것을 **읽기만** 한다(ga-sdk 03e8dae 기준). ga-sdk 는 바꾸지 않는다.
+
+### 7.1 읽는 것
+
+| 원천 | 형식 · 쓰기 방식 | 시각 정보 |
+|---|---|---|
+| `.ga/pool.json` (`ga-pool/1`) | `round`, `n`, `roles`, `attempts`, `live{node: {role, item, since, idle, children, retiring?}}`, 원자적 교체(tmp+rename), 한 라운드에 여러 번 다시 씀 | 없음(round 수만) |
+| `.ga/queue/<seq>-<id>.json`, `queue/done/`, `queue/failed/` | work/1 항목, 원자적 생성, 끝나면 이동 | 없음 |
+| `.ga/pool/telemetry.jsonl` | L0 `node.started` `{node, role, item}`, `node.retired` `{…, outcome}`, `work.accepted` / `work.dropped` `{node, item, id, reason}`, `work.failed` `{item, role, reason}`, 추가 전용, id · seq · at 없음 | 없음 |
+| `.ga/nodes/<n>/telemetry.jsonl`, `.ga/telemetry/<s>.jsonl` | L0 `run.end` (턴 1 회), `peer.message.sent` / `received` `{from_session, to_session, msg_id, in_reply_to, schema, bytes, tokens_est}`, 추가 전용(마지막 줄이 잘려 있을 수 있음) | `at: null`, `run_duration_ms` 만 |
+| `.ga/nodes/<n>/run.json` | `runs`, `cont{status, pending}`, `pending[{peer, ts}]`, 원자적 | `pending[].ts` |
+| `.ga/nodes/<n>/state.json` | `consults` (동료 대기), `done{item: {status, verified}}`, 원자적 | 없음 |
+| `.ga/nodes/<n>/pi.json`, `.ga/roles/<r>/pi.json` | `pi{peer: value}`, 원자적 | `interactions[].ts` |
+| `.ga/nodes/<n>/ga-budget.jsonl` | 예산 훅 기록, 추가 전용. **턴 진행 중에 커지는 유일한 신호** | — |
+| `.ga/usage.json` | `ga usage` 스냅샷, **원자적이지 않음**(파싱 실패 시 다음 폴링까지 이전 값 유지) | 없음 |
+| `.ga/nodes/_retired/<n>/` | 은퇴한 노드 디렉터리(`shutil.move`, 읽는 도중 사라질 수 있음 → 다음 폴링에서 다시 찾음) | — |
+
+동료 메시지 본문은 git orphan 브랜치 `ga-mailbox` 에 있다. 모니터는 본문을 읽지 않고 L0 `peer.message.*` 만 쓴다.
+
+### 7.2 MonitorEvent (`monitor-event/1`)
+
+```
+{seq, observed_at, kind, node?, role?, item?, peer?, data{…}, source_file, provenance}
+```
+
+- `kind` 는 `design/encoding.json` 의 신호 이름이다(`l0:<type>`, `file:<signal>`, `derived:<mood>`).
+- `observed_at` 은 **리더가 변화를 처음 본 시각**이다. ga 0.6 의 L0 에는 시각이 없으므로, 경과 · 속도 계산은 모두 이 값을 쓰고 출처는 CALCULATED 다. 리더가 처음 붙을 때 이미 있던 기록은 `observed_at` = 붙은 시각이고, `data.backfill = true` 로 표시한다.
+- 리더: 폴링 주기 500 ms(설정 `GC_MONITOR_POLL_MS`). JSON 파일은 mtime + 내용 해시로 바뀜을 감지하고, jsonl 은 바이트 오프셋으로 이어 읽으며 잘린 마지막 줄은 다음 폴링으로 미룬다.
+- `derived:*` 신호는 리더가 시간 창 규칙으로 만든다: pace = 분당 이벤트 수, collaboration = 분당 메시지 ≥ 3, stall = 120 초 무신호 + 대기 타일 있음, tension = 예산 ≥ 80 % 또는 실패 타일 ≥ 2 또는 대기 사슬 ≥ 3, all_done 은 encoding.json 의 정의대로.
+
+### 7.3 MonitorSnapshot
+
+```
+{observed_at, round, figures:[{node, role, shape_index, state, item, since, elapsed_ms, turns, tokens, cost_cli_microusd, ring}],
+ tiles:[{id, role, shelf: waiting|held|done|failed, holder?, parent?}], edges:[{a, b, pi_permille, messages}],
+ meters:{tokens_total, cost_cli_microusd, budget_microusd?, budget_use_permille?}, mood:{pace, collaboration, stall, tension, all_done}}
+```
+
+- figure `state` 는 `idle` · `running` · `waiting_peer` · `continuing` · `retiring` · `retired` 중 하나이고, 7.1 의 파일에서 추론한다.
+- `running` 에는 시작 시각 이벤트가 없으므로 경과는 마지막 `node.started` 또는 `run.end` 관측 시각부터 잰다.
+- 녹화(`monitor_recordings`)는 MonitorEvent JSONL 이다. 재생은 같은 렌더러에 같은 이벤트와 `t` 를 넣는 것이고, 그래서 결과가 결정적이다(design/motion.md 1).

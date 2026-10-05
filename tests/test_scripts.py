@@ -10,7 +10,7 @@ REPO = Path(__file__).resolve().parent.parent
 # work/1 as ga-sdk 0.6 checks it (ga/net/pool.py ITEM_KEYS / ITEM_ID at the pinned sha 03e8dae)
 ITEM_KEYS = {"schema", "id", "role", "goal", "uses", "needs", "answer", "check", "parent", "depth", "origin"}
 ITEM_ID = re.compile(r"^CMD-[A-Z]+\d+$")
-ROLES = {"frontend", "core-backend", "ingestion-analytics", "consulting", "infra"}
+ROLES = {"design", "frontend", "core-backend", "ingestion-analytics", "consulting", "infra"}
 
 
 def run(*args):

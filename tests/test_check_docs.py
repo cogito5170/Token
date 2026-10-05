@@ -98,6 +98,40 @@ class CheckDocsTest(unittest.TestCase):
                   '"files": ["frontend/src/app/(app)/overview/**", "frontend/src/app/(app)/upload/**"')
         self.assertCaught("CMD-GC41 and CMD-GC43 both own")
 
+    # ---- live monitor / UI design (CMD-GC0 additions)
+    def test_l0_kind_without_encoding(self):
+        import json
+        p = self.root / "design" / "encoding.json"
+        enc = json.loads(p.read_text(encoding="utf-8"))
+        enc["signals"] = [e for e in enc["signals"] if e["signal"] != "l0:peer.message.sent"]
+        p.write_text(json.dumps(enc), encoding="utf-8")
+        self.assertCaught("l0:peer.message.sent has no visual encoding")
+
+    def test_ga_signal_encoded_as_none(self):
+        self.edit("design/encoding.json", '"visual": "figure emerges', '"visual": "none", "x": "figure emerges')
+        self.assertCaught("l0:node.started is observable in ga 0.6 but has visual 'none'")
+
+    def test_word_outside_allowed_set(self):
+        self.edit("design/encoding.json", '"word": "talk"', '"word": "token"')
+        self.assertCaught("word 'token' is not one of")
+
+    def test_low_contrast_token(self):
+        self.edit("design/tokens.json", '"muted": "#5A6470"', '"muted": "#B0B8C0"')
+        self.assertCaught("light muted on surface: contrast")
+
+    def test_missing_wireframe(self):
+        self.edit("docs/ui/wireframes.md", "## screen: live_monitor", "## live_monitor")
+        self.assertCaught("no wireframe for screen live_monitor")
+
+    def test_work_item_without_runner(self):
+        self.edit("docs/roadmap.md", '"id": "CMD-IF1", "role": "infra", "kind": "feature", "runner": "playwright"',
+                  '"id": "CMD-IF1", "role": "infra", "kind": "feature"')
+        self.assertCaught("CMD-IF1: runner must be one of")
+
+    def test_live_monitor_screen_missing(self):
+        self.edit("docs/visualization.md", "## screen: live_monitor —", "## live monitor —")
+        self.assertCaught("visualization.md screens")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,520 @@
+{
+ "schema": "gc-visual-encoding/1",
+ "owner": "design",
+ "note": "Every signal the live monitor can observe -> its visual mapping (docs/ui-design.md 6). scripts/check_docs.py requires an entry for every L0 kind (ga 0.6 emitted + l0-telemetry catalog) and every file/derived signal of docs/visualization.md screen live_monitor; signals ga 0.6 emits must have a real visual, a reduced-motion alternative and a non-color cue. Words are only build, wait, talk, test, done.",
+ "words": [
+  "build",
+  "wait",
+  "talk",
+  "test",
+  "done"
+ ],
+ "glossary_banned_on_stage": [
+  "node",
+  "queue",
+  "token",
+  "pi",
+  "L0",
+  "agent",
+  "LLM"
+ ],
+ "signals": [
+  {
+   "signal": "l0:node.started",
+   "source": "L0 .ga/pool/telemetry.jsonl",
+   "emitted_by_ga_0_6": true,
+   "visual": "figure emerges at the edge of the stage and takes its place",
+   "motion": "scale 0->1, slow (400 ms), then settles into the layout",
+   "reduced_motion": "appears at full size, fades in 120 ms",
+   "not_color_only": "shape appears (presence), not a color change",
+   "word": null,
+   "hover": "role, item id"
+  },
+  {
+   "signal": "l0:node.retired",
+   "source": "L0 .ga/pool/telemetry.jsonl",
+   "emitted_by_ga_0_6": true,
+   "visual": "figure leaves for the rest rim; outcome done leaves a solid dot, failed a broken-outline dot, idle fades without a mark",
+   "motion": "shrink + drift to rim (slow)",
+   "reduced_motion": "jumps to rim, outline style shows outcome",
+   "not_color_only": "outcome told by mark shape: solid dot / broken outline / no mark",
+   "word": "done",
+   "hover": "outcome, turns, tokens"
+  },
+  {
+   "signal": "l0:work.accepted",
+   "source": "L0 .ga/pool/telemetry.jsonl",
+   "emitted_by_ga_0_6": true,
+   "visual": "a small child tile buds off the proposer's tile and joins the waiting shelf",
+   "motion": "bud splits off (base), floats up to the shelf",
+   "reduced_motion": "child tile appears on the shelf",
+   "not_color_only": "new tile shape with a thin link to its parent tile",
+   "word": null,
+   "hover": "child id, reason"
+  },
+  {
+   "signal": "l0:work.dropped",
+   "source": "L0 .ga/pool/telemetry.jsonl",
+   "emitted_by_ga_0_6": true,
+   "visual": "a bud appears and dissolves, leaving a dotted outline for a moment",
+   "motion": "bud forms then dissolves (slow)",
+   "reduced_motion": "dotted outline shown 1 s, no motion",
+   "not_color_only": "dotted outline (shape), not color",
+   "word": null,
+   "hover": "reason"
+  },
+  {
+   "signal": "l0:work.failed",
+   "source": "L0 .ga/pool/telemetry.jsonl",
+   "emitted_by_ga_0_6": true,
+   "visual": "the tile cracks in two and slides to the side shelf",
+   "motion": "crack + slide (base)",
+   "reduced_motion": "tile shown split on the side shelf",
+   "not_color_only": "split shape + position on side shelf",
+   "word": null,
+   "hover": "reason"
+  },
+  {
+   "signal": "l0:run.end",
+   "source": "L0 .ga/nodes/<n>/telemetry.jsonl, .ga/telemetry/<s>.jsonl",
+   "emitted_by_ga_0_6": true,
+   "visual": "the figure exhales: one ring expands from it; the figure grows a step (area ~ sqrt(tokens of this item)); its fuel arc advances",
+   "motion": "ring expands and fades (slow); size eases (base)",
+   "reduced_motion": "ring drawn once at final size, no expansion; size changes instantly",
+   "not_color_only": "ring + size + arc length, all lightness-independent",
+   "word": null,
+   "hover": "model, turns, tokens in/out/cache, cost (CLI), duration"
+  },
+  {
+   "signal": "l0:peer.message.sent",
+   "source": "L0 .ga/nodes/<n>/telemetry.jsonl",
+   "emitted_by_ga_0_6": true,
+   "visual": "a pulse of light travels along the curve from sender to receiver; pulse size ~ log(bytes); line weight = pi",
+   "motion": "travel along the edge (~800 ms, eased)",
+   "reduced_motion": "edge highlighted (thicker) for 1 s, no travel",
+   "not_color_only": "pulse is a moving shape; edge weight, not color, carries pi",
+   "word": "talk",
+   "hover": "schema, bytes, tokens_est (estimated)"
+  },
+  {
+   "signal": "l0:peer.message.received",
+   "source": "L0 .ga/nodes/<n>/telemetry.jsonl",
+   "emitted_by_ga_0_6": true,
+   "visual": "the receiver absorbs the pulse: a short ring flash on its outline",
+   "motion": "ring flash (fast)",
+   "reduced_motion": "outline thickens 1 s",
+   "not_color_only": "outline thickness",
+   "word": null,
+   "hover": "from, msg id"
+  },
+  {
+   "signal": "l0:turn.start",
+   "source": "l0-telemetry catalog",
+   "emitted_by_ga_0_6": false,
+   "visual": "figure starts its working glow (build)",
+   "motion": "breathing glow whose tempo rises with elapsed time",
+   "reduced_motion": "steady glow + small elapsed tick marks",
+   "not_color_only": "glow halo + tick marks",
+   "word": "build",
+   "hover": "elapsed"
+  },
+  {
+   "signal": "l0:turn.end",
+   "source": "l0-telemetry catalog",
+   "emitted_by_ga_0_6": false,
+   "visual": "same exhale ring as run.end",
+   "motion": "ring expands",
+   "reduced_motion": "ring once",
+   "not_color_only": "ring shape",
+   "word": null
+  },
+  {
+   "signal": "l0:turn.continued",
+   "source": "l0-telemetry catalog",
+   "emitted_by_ga_0_6": false,
+   "visual": "a small dot orbits the figure (the work goes on)",
+   "motion": "orbit (slow)",
+   "reduced_motion": "static dot at 12 o'clock",
+   "not_color_only": "orbiting dot shape",
+   "word": "build"
+  },
+  {
+   "signal": "l0:run.start",
+   "source": "l0-telemetry catalog",
+   "emitted_by_ga_0_6": false,
+   "visual": "figure starts its working glow",
+   "motion": "breathing glow",
+   "reduced_motion": "steady glow",
+   "not_color_only": "glow halo",
+   "word": "build"
+  },
+  {
+   "signal": "l0:run.snapshot",
+   "source": "l0-telemetry catalog",
+   "emitted_by_ga_0_6": false,
+   "visual": "fuel arcs update",
+   "motion": "arc eases",
+   "reduced_motion": "arc jumps",
+   "not_color_only": "arc length",
+   "word": null,
+   "hover": "cost so far"
+  },
+  {
+   "signal": "l0:llm.request",
+   "source": "l0-telemetry catalog",
+   "emitted_by_ga_0_6": false,
+   "visual": "figure inhales: glow brightens briefly",
+   "motion": "brighten (fast)",
+   "reduced_motion": "no change",
+   "not_color_only": "none needed (paired with response ring)",
+   "word": null
+  },
+  {
+   "signal": "l0:llm.response",
+   "source": "l0-telemetry catalog",
+   "emitted_by_ga_0_6": false,
+   "visual": "small exhale ring and fuel arc advance",
+   "motion": "ring (base)",
+   "reduced_motion": "arc jumps",
+   "not_color_only": "ring + arc length",
+   "word": null,
+   "hover": "tokens"
+  },
+  {
+   "signal": "l0:llm.error",
+   "source": "l0-telemetry catalog",
+   "emitted_by_ga_0_6": false,
+   "visual": "figure outline flickers jagged once",
+   "motion": "jagged flicker (fast)",
+   "reduced_motion": "jagged outline 1 s",
+   "not_color_only": "jagged outline shape",
+   "word": null,
+   "hover": "error class"
+  },
+  {
+   "signal": "l0:tool.start",
+   "source": "l0-telemetry catalog",
+   "emitted_by_ga_0_6": false,
+   "visual": "a spark leaves the figure to its tool orbit",
+   "motion": "spark travels out (fast)",
+   "reduced_motion": "spark shown on orbit",
+   "not_color_only": "spark shape",
+   "word": "build",
+   "hover": "tool head (hashed target)"
+  },
+  {
+   "signal": "l0:tool.end",
+   "source": "l0-telemetry catalog",
+   "emitted_by_ga_0_6": false,
+   "visual": "the spark returns into the figure",
+   "motion": "spark travels back",
+   "reduced_motion": "spark removed",
+   "not_color_only": "spark shape",
+   "word": null
+  },
+  {
+   "signal": "l0:input.received",
+   "source": "l0-telemetry catalog",
+   "emitted_by_ga_0_6": false,
+   "visual": "a small dot drops into the figure from above",
+   "motion": "drop (fast)",
+   "reduced_motion": "dot appears inside",
+   "not_color_only": "dot shape",
+   "word": null
+  },
+  {
+   "signal": "l0:input.removed",
+   "source": "l0-telemetry catalog",
+   "emitted_by_ga_0_6": false,
+   "visual": "a dot leaves the figure and fades",
+   "motion": "rise + fade",
+   "reduced_motion": "dot removed",
+   "not_color_only": "dot shape",
+   "word": null
+  },
+  {
+   "signal": "l0:provider.rate_limit",
+   "source": "l0-telemetry catalog",
+   "emitted_by_ga_0_6": false,
+   "visual": "figure outline turns dashed and its glow pauses",
+   "motion": "breathing stops",
+   "reduced_motion": "dashed outline",
+   "not_color_only": "dashed outline",
+   "word": "wait",
+   "hover": "retry after"
+  },
+  {
+   "signal": "l0:provider.rate_limit_window",
+   "source": "l0-telemetry catalog",
+   "emitted_by_ga_0_6": false,
+   "visual": "same as provider.rate_limit while the window lasts",
+   "motion": "breathing stops",
+   "reduced_motion": "dashed outline",
+   "not_color_only": "dashed outline",
+   "word": "wait"
+  },
+  {
+   "signal": "l0:runtime.compaction",
+   "source": "l0-telemetry catalog",
+   "emitted_by_ga_0_6": false,
+   "visual": "figure squeezes briefly (its memory was compacted)",
+   "motion": "squeeze and release (base)",
+   "reduced_motion": "figure outline doubles for 1 s",
+   "not_color_only": "double outline",
+   "word": null,
+   "hover": "tokens before/after"
+  },
+  {
+   "signal": "l0:action.dispatch",
+   "source": "l0-telemetry catalog",
+   "emitted_by_ga_0_6": false,
+   "visual": "a spark leaves toward the stage edge (an action goes out)",
+   "motion": "travel out",
+   "reduced_motion": "spark at edge",
+   "not_color_only": "spark shape",
+   "word": null
+  },
+  {
+   "signal": "l0:action.result",
+   "source": "l0-telemetry catalog",
+   "emitted_by_ga_0_6": false,
+   "visual": "the spark returns: solid if ok, jagged if error",
+   "motion": "travel back",
+   "reduced_motion": "solid or jagged mark 1 s",
+   "not_color_only": "solid vs jagged shape",
+   "word": null
+  },
+  {
+   "signal": "l0:runtime.limits",
+   "source": "l0-telemetry catalog",
+   "emitted_by_ga_0_6": false,
+   "visual": "none",
+   "motion": "none",
+   "reduced_motion": "none",
+   "not_color_only": "n/a",
+   "word": null,
+   "reason": "limits are static config; shown only in hover detail"
+  },
+  {
+   "signal": "l0:runtime.status",
+   "source": "l0-telemetry catalog",
+   "emitted_by_ga_0_6": false,
+   "visual": "none",
+   "motion": "none",
+   "reduced_motion": "none",
+   "not_color_only": "n/a",
+   "word": null,
+   "reason": "status text is not meaningful to a lay viewer; hover detail only"
+  },
+  {
+   "signal": "l0:source.closed",
+   "source": "l0-telemetry catalog",
+   "emitted_by_ga_0_6": false,
+   "visual": "none",
+   "motion": "none",
+   "reduced_motion": "none",
+   "not_color_only": "n/a",
+   "word": null,
+   "reason": "end of a stream; the figure simply stops its activity marks"
+  },
+  {
+   "signal": "l0:dependency.probe",
+   "source": "l0-telemetry catalog",
+   "emitted_by_ga_0_6": false,
+   "visual": "none",
+   "motion": "none",
+   "reduced_motion": "none",
+   "not_color_only": "n/a",
+   "word": null,
+   "reason": "environment probing has no meaning on the stage"
+  },
+  {
+   "signal": "file:queue.added",
+   "source": "file .ga/queue/<seq>-<id>.json appears",
+   "emitted_by_ga_0_6": true,
+   "visual": "a tile appears on the waiting shelf (top band)",
+   "motion": "tile drops in (base)",
+   "reduced_motion": "tile appears",
+   "not_color_only": "tile shape + shelf position",
+   "word": null,
+   "hover": "item id, role, goal (first 80 chars)"
+  },
+  {
+   "signal": "file:pool.live.claimed",
+   "source": "file .ga/pool.json live[n].item",
+   "emitted_by_ga_0_6": true,
+   "visual": "the tile flies from the shelf into the figure's hands",
+   "motion": "flight (slow)",
+   "reduced_motion": "tile moves instantly",
+   "not_color_only": "position change + tile attached to figure",
+   "word": "build"
+  },
+  {
+   "signal": "file:queue.done",
+   "source": "file moved to .ga/queue/done/",
+   "emitted_by_ga_0_6": true,
+   "visual": "the tile settles on the done shelf (bottom band) and fills in",
+   "motion": "settle (base)",
+   "reduced_motion": "tile placed, filled",
+   "not_color_only": "filled tile + bottom shelf",
+   "word": "done"
+  },
+  {
+   "signal": "file:queue.failed",
+   "source": "file moved to .ga/queue/failed/",
+   "emitted_by_ga_0_6": true,
+   "visual": "the tile cracks and slides to the side shelf",
+   "motion": "crack + slide",
+   "reduced_motion": "split tile on side shelf",
+   "not_color_only": "split shape + side shelf",
+   "word": null
+  },
+  {
+   "signal": "file:pool.live.idle",
+   "source": "file .ga/pool.json live[n].idle increases",
+   "emitted_by_ga_0_6": true,
+   "visual": "figure dims and breathes slowly",
+   "motion": "slow breathing (4 s)",
+   "reduced_motion": "dimmed, no breathing",
+   "not_color_only": "dimmed + smaller halo (size and lightness)",
+   "word": "wait",
+   "hover": "idle steps"
+  },
+  {
+   "signal": "file:pool.live.retiring",
+   "source": "file .ga/pool.json live[n].retiring",
+   "emitted_by_ga_0_6": true,
+   "visual": "figure starts to fade toward the rim",
+   "motion": "fade (slow)",
+   "reduced_motion": "outline becomes thin",
+   "not_color_only": "thin outline",
+   "word": null,
+   "hover": "outcome"
+  },
+  {
+   "signal": "file:pool.round",
+   "source": "file .ga/pool.json round increments",
+   "emitted_by_ga_0_6": true,
+   "visual": "ambient light sweeps once across the stage (the beat of the pool)",
+   "motion": "sweep (slow)",
+   "reduced_motion": "none",
+   "not_color_only": "n/a (ambient only, never the only cue)",
+   "word": null
+  },
+  {
+   "signal": "file:node.state.consults",
+   "source": "file .ga/nodes/<n>/state.json consults non-empty",
+   "emitted_by_ga_0_6": true,
+   "visual": "waiting on a peer: figure dims and a thin taut tether reaches toward the awaited figure",
+   "motion": "tether trembles slightly; slow breathing",
+   "reduced_motion": "static tether, dimmed",
+   "not_color_only": "tether line shape + dimming",
+   "word": "wait",
+   "hover": "waiting on, since"
+  },
+  {
+   "signal": "file:node.run.cont_open",
+   "source": "file .ga/nodes/<n>/run.json cont[*].status=open",
+   "emitted_by_ga_0_6": true,
+   "visual": "a dot orbits the figure (continuing a job)",
+   "motion": "orbit",
+   "reduced_motion": "static dot",
+   "not_color_only": "dot shape",
+   "word": "build"
+  },
+  {
+   "signal": "file:node.state.done",
+   "source": "file .ga/nodes/<n>/state.json done[item]",
+   "emitted_by_ga_0_6": true,
+   "visual": "verified: the ring around the figure closes into a full circle; failed: the ring breaks with a jagged gap; needs_judgement: an open ring with a gap; budget: the ring stops with a flat cap",
+   "motion": "ring draws (slow)",
+   "reduced_motion": "final ring shape shown",
+   "not_color_only": "closed / jagged / open / flat-capped ring shapes",
+   "word": "done",
+   "hover": "status, verified, turns"
+  },
+  {
+   "signal": "file:node.pi",
+   "source": "file .ga/nodes/<n>/pi.json pi changes",
+   "emitted_by_ga_0_6": true,
+   "visual": "the line between two figures thickens or thins (1-6 px) and pulls them closer or apart",
+   "motion": "weight and spacing ease (slow)",
+   "reduced_motion": "weight changes instantly, layout fixed",
+   "not_color_only": "line weight and distance",
+   "word": null,
+   "hover": "pi value"
+  },
+  {
+   "signal": "file:node.budget.grow",
+   "source": "file .ga/nodes/<n>/ga-budget.jsonl grows",
+   "emitted_by_ga_0_6": true,
+   "visual": "fine particles stir inside the figure: the only sign of work inside a turn in ga 0.6 (running, elapsed)",
+   "motion": "particles (speed ~ growth rate)",
+   "reduced_motion": "steady inner dots + elapsed ticks",
+   "not_color_only": "inner dots + tick marks",
+   "word": "build",
+   "hover": "elapsed since last run.end"
+  },
+  {
+   "signal": "file:usage.snapshot",
+   "source": "file .ga/usage.json changes",
+   "emitted_by_ga_0_6": true,
+   "visual": "fuel arcs and the horizon line (total use vs budget) update",
+   "motion": "ease",
+   "reduced_motion": "jump",
+   "not_color_only": "arc length / horizon height",
+   "word": null,
+   "hover": "tokens, cost, budget %"
+  },
+  {
+   "signal": "derived:pace",
+   "source": "events per minute over all sources",
+   "emitted_by_ga_0_6": true,
+   "visual": "ambient particle speed and sweep tempo",
+   "motion": "tempo ~ events/min",
+   "reduced_motion": "none",
+   "not_color_only": "n/a (ambient)",
+   "word": null
+  },
+  {
+   "signal": "derived:collaboration",
+   "source": "peer messages per minute >= 3",
+   "emitted_by_ga_0_6": true,
+   "visual": "figures drift closer, lines brighten, pulses overlap into a shared rhythm",
+   "motion": "layout springs tighten",
+   "reduced_motion": "figures closer, lines thicker",
+   "not_color_only": "distance + line weight",
+   "word": null
+  },
+  {
+   "signal": "derived:stall",
+   "source": "no signal for 120 s while tiles wait or figures are live",
+   "emitted_by_ga_0_6": true,
+   "visual": "the whole stage slows and dims; one small word appears",
+   "motion": "tempo -> 0.3x, lightness -20%",
+   "reduced_motion": "dimmed stage",
+   "not_color_only": "lightness + stillness",
+   "word": "wait"
+  },
+  {
+   "signal": "derived:tension",
+   "source": "budget use >= 80 %, or >= 2 failed tiles, or a waiting chain >= 3",
+   "emitted_by_ga_0_6": true,
+   "visual": "heartbeat quickens, warm rim light at the horizon, tick marks on the fuel arcs",
+   "motion": "heartbeat 1.5x",
+   "reduced_motion": "rim light + tick marks static",
+   "not_color_only": "tick marks + rim (not color alone)",
+   "word": null
+  },
+  {
+   "signal": "derived:all_done",
+   "source": "queue empty, nothing live, >= 1 tile done",
+   "emitted_by_ga_0_6": true,
+   "visual": "everything settles in a line, one calm sweep of light",
+   "motion": "settle + sweep (slow)",
+   "reduced_motion": "settled, no sweep",
+   "not_color_only": "stillness + filled tiles",
+   "word": "done"
+  }
+ ]
+}

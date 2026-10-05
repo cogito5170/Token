@@ -136,11 +136,23 @@
 - 구독 이벤트: 없음
 - 하지 않는 것: 키 원문을 응답 · 로그 · 이벤트 · 예외 메시지에 넣기, 키를 디스크에 평문으로 쓰기.
 
-## `run` — Run (나중)
+## `run` — Run (모니터 1b, 실행 나중)
 
-- 책임: 플랫폼 안 ga 0.6 실행(노드 풀), 노드 타임라인, 동료 메시지 · π 가중치, 판정 결과, 작업 흐름 퍼널, 실행 SSE. MVP 에서는 스키마 · API 설계만 있고 구현하지 않는다.
-- owned_tables: `runs`, `run_nodes`, `run_events`, `run_messages`, `run_verdicts`
-- 공개 인터페이스: `start(ws, plan) -> Run` (승인 게이트 · 예산 검사 뒤), `stop(run_id)`, `timeline(run_id)`, `network(run_id)`, `verdicts(run_id)`, `flow(run_id)`, `stream(run_id)`.
-- 발행 이벤트: `run.run.started`, `run.run.finished`, `run.node.proposed`
-- 구독 이벤트: `quota.alert.raised` (상한에서 체크포인트 후 정지)
-- 하지 않는 것: ga-sdk 코드 수정 · 복사, 노드 제안을 바로 적용(→ `advisor.submit_proposal`), 사용자 확인 없이 push · 의존성 변경.
+- 책임: (1b) **라이브 모니터의 읽기 모델.**
+  - 등록된 로컬 `.ga` 디렉터리를 읽기만 한다: `pool.json`, `queue/`, `nodes/*/run.json` · `state.json` · `pi.json` · `ga-budget.jsonl`, L0 `*.jsonl`, `usage.json`.
+  - 읽은 것을 `monitor-event/1` 로 바꾸고, 관측 시각을 찍고, 스냅샷 · SSE · 녹화로 낸다(data-model.md 7 절).
+  - 같은 리더가 데스크톱 셸의 로컬 사이드카로도 돈다(ADR-0008).
+  - (나중) 플랫폼 안 ga 0.6 실행, 노드 타임라인 · 동료 네트워크 · 판정 · 작업 흐름.
+- owned_tables: `ga_dirs`, `monitor_recordings`, `runs`, `run_nodes`, `run_events`, `run_messages`, `run_verdicts`
+- 공개 인터페이스:
+  - (1b) `snapshot(source_id) -> MonitorSnapshot`, `stream(source_id, after_seq)` (SSE), `record(source_id)`, `recording(rec_id)`.
+  - `gadir.read(path) -> Iterator[MonitorEvent]` (stdlib 만 쓰는 순수 리더).
+  - (나중) `start(ws, plan)` (승인 게이트 · 예산 검사 뒤), `stop`, `timeline`, `network`, `verdicts`, `flow`.
+- 발행 이벤트: `run.monitor.recorded`, (나중) `run.run.started`, `run.run.finished`, `run.node.proposed`
+- 구독 이벤트: (나중) `quota.alert.raised` (상한에서 체크포인트 후 정지)
+- 하지 않는 것:
+  - `.ga` 안의 어떤 파일도 쓰지 않는다. 열기는 읽기 전용이고 잠그지도 않는다.
+  - 노드를 멈추거나 바꾸는 조작을 하지 않는다. 조작은 나중이며 승인 게이트 뒤에 온다.
+  - ga-sdk 코드를 수정 · 복사하지 않는다.
+  - 노드 제안을 바로 적용하지 않는다(→ `advisor.submit_proposal`).
+  - 사용자 확인 없이 push · 의존성 변경을 하지 않는다.

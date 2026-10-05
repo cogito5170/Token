@@ -1,6 +1,6 @@
 # 시각화 계약
 
-사양 3 절의 화면 9 개. 화면마다 답하는 질문, 차트 형태, 읽는 API 경로와 시리즈, 단위, 출처 표시를 고정한다.
+사양 3 절의 화면 9 개와 3.1 의 라이브 워크플로 모니터(화면 10). 화면마다 답하는 질문, 차트 형태, 읽는 API 경로와 시리즈, 단위, 출처 표시를 고정한다.
 
 **규칙**
 
@@ -118,9 +118,26 @@
 - units: microusd (y), 날짜 (x)
 - provenance: 누적 list CALCULATED, cli MEASURED, 예측 ESTIMATED (점선 + 띠)
 
+## screen: live_monitor — 라이브 워크플로 모니터
+
+- status: phase 1b (사양 3.1 · 3.1.1, 사용자 추가 요청). 웹 + 데스크톱 셸(ADR-0008), `.ga` 를 읽기만 한다. 조작 없음
+- question: 지금 일꾼들이 무엇을 하고 있고, 서로 어떻게 돕고 있으며, 어디서 막혔나?
+- chart: 움직이는 장면 하나(Canvas 2D, 어두운 테마). 페이지 · 탭 · 표가 없다. figure(역할 모양) · tile(작업) · 펄스(메시지) · 선 굵기(π) · 고리(결과) · 연료 호와 수평선(토큰 · 비용) · 분위기(속도 · 막힘 · 협업 · 긴장 · 완료). 재생 스크러버는 마우스를 올릴 때만 보인다. 시각 언어는 docs/ui-design.md 6 절, 신호별 대응은 design/encoding.json
+- api: `GET /v1/workspaces/{ws}/monitor/sources/{source}/snapshot`
+- api: `GET /v1/workspaces/{ws}/monitor/sources/{source}/events`
+- api: `GET /v1/workspaces/{ws}/monitor/sources/{source}/recordings/{recording}`
+- series: 처음에는 `MonitorSnapshot` (figures · tiles · edges · meters · mood), 그 뒤 SSE `MonitorEvent` (monitor-event/1, `kind` = 아래 신호). 재생은 녹화 JSONL 을 같은 렌더러에 `t` 를 바꿔 가며 넣는다
+- signals: `file:queue.added`, `file:pool.live.claimed`, `file:queue.done`, `file:queue.failed`, `file:pool.live.idle`, `file:pool.live.retiring`, `file:pool.round`, `file:node.state.consults`, `file:node.run.cont_open`, `file:node.state.done`, `file:node.pi`, `file:node.budget.grow`, `file:usage.snapshot`, `derived:pace`, `derived:collaboration`, `derived:stall`, `derived:tension`, `derived:all_done` (+ L0 종류 전부: `check_docs.py` 의 목록)
+- units: 무대에는 숫자가 없다. 호버 툴팁에만 tokens, microusd, ms(경과), count
+- provenance: 무대에는 칩이 없다(글자 최소). 툴팁에서 작은 단어로 보인다.
+  - 토큰 · 비용(`run.end` reported) = MEASURED.
+  - 메시지 `tokens_est` = ESTIMATED(bytes/4).
+  - 경과 시간 = CALCULATED(모니터 관측 시각 기준). ga 0.6 L0 에는 시각이 없다(`at: null`).
+  - 턴 진행은 "running (elapsed)" 로만 보인다. turn.started 가 없기 때문이다.
+
 ## 보조 화면 (MVP, 사양 3 절 표 밖)
 
-화면 9 개 외에 MVP 흐름에 필요한 화면. 같은 규칙을 따른다.
+화면 10 개 외에 MVP 흐름에 필요한 화면. 같은 규칙을 따른다.
 
 | 화면 | 읽는 API |
 |---|---|

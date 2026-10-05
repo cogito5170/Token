@@ -4,4 +4,4 @@
 """
 DOMAIN = "run"
 MVP = False
-OWNED_TABLES = ('runs', 'run_nodes', 'run_events', 'run_messages', 'run_verdicts',)
+OWNED_TABLES = ('ga_dirs', 'monitor_recordings', 'runs', 'run_nodes', 'run_events', 'run_messages', 'run_verdicts',)

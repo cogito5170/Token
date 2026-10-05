@@ -29,7 +29,7 @@ class SchemaTest(unittest.TestCase):
             r = self.psql(db, "-f", str(REPO / "docs" / "schema.sql"))
             self.assertEqual(r.returncode, 0, r.stderr)
             r = self.psql(db, "-c", "select count(*) from information_schema.tables where table_schema='public'")
-            self.assertEqual(int(r.stdout.strip()), 41)
+            self.assertEqual(int(r.stdout.strip()), 43)
             r = self.psql(db, "-c", "insert into audit_log(actor_kind, action, target_kind, target_id) "
                                     "values ('system','t','t','1'); update audit_log set action='x'")
             self.assertNotEqual(r.returncode, 0)  # append-only trigger

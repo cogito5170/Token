@@ -14,9 +14,14 @@ Checks (each problem is one line; exit 1 if any):
   advisor     docs/consulting.md has rules R1..R7, each with a detector, a savings formula and a fixture file that
               exists and holds {rule, calls, expect{fires, evidence_call_ids, savings_p50_microusd}}
   ownership   docs/ownership.md rows parse, roles are known, every repo file matches exactly one pattern
-  work        docs/roadmap.md work items: ids, roles, depends acyclic, files inside an ownership row of the same role
-              (contract rows only for kind=contract, never baseline rows), no shared files between independent items,
-              done_when is an argv list
+  work        docs/roadmap.md work items: ids, roles, runner, depends acyclic, files inside an ownership row of the same
+              role (contract rows only for kind=contract, never baseline rows), no shared files between independent
+              items, done_when is an argv list
+  encoding    design/encoding.json has an entry for every L0 event kind (L0_KINDS below) and every signal listed by the
+              live_monitor screen; signals ga 0.6 emits have a visual, a reduced-motion form and a non-color cue;
+              words come only from the allowed set
+  ui          design/tokens.json contrast pairs meet their minimum (WCAG 2.1 formula), series colors differ in
+              relative luminance, docs/ui/wireframes.md has every screen
 """
 from __future__ import annotations
 
@@ -29,9 +34,22 @@ from pathlib import Path
 DOMAINS = ("identity", "workspace", "source", "ingestion", "usage", "quota", "estimation", "advisor",
            "simulation", "profile", "report", "notification", "audit", "integration", "run")
 SCREENS = ("overview", "token_mix", "call_size", "node_timeline", "task_flow", "peer_network", "verdicts",
-           "config_compare", "budget_burn")
+           "config_compare", "budget_burn", "live_monitor")
 RULES = ("R1", "R2", "R3", "R4", "R5", "R6", "R7")
-ROLES = ("frontend", "core-backend", "ingestion-analytics", "consulting", "infra")
+ROLES = ("design", "frontend", "core-backend", "ingestion-analytics", "consulting", "infra")
+RUNNERS = ("unittest", "vitest", "playwright")
+# L0 event kinds the live monitor must encode. ga 0.6 emits the first eight (ga-sdk 03e8dae: ga/net/pool.py, ga/net/node.py,
+# ga/hub.py via ga/l0.py); the rest is the l0-telemetry catalog (Telemetry f6c7ae2, telemetry/catalog.py) that a later ga
+# may emit (turn.start, tool.start, ...). Update both lists together with design/encoding.json when a pin moves.
+L0_KINDS_GA = ("node.started", "node.retired", "work.accepted", "work.dropped", "work.failed", "run.end",
+               "peer.message.sent", "peer.message.received")
+L0_KINDS_CATALOG = ("llm.request", "llm.response", "llm.error", "tool.start", "tool.end", "run.start", "run.end",
+                    "run.snapshot", "input.received", "turn.start", "turn.end", "turn.continued", "source.closed",
+                    "runtime.limits", "provider.rate_limit", "provider.rate_limit_window", "runtime.compaction",
+                    "runtime.status", "input.removed", "dependency.probe", "action.dispatch", "action.result",
+                    "peer.message.sent", "peer.message.received")
+L0_KINDS = tuple(dict.fromkeys(L0_KINDS_GA + L0_KINDS_CATALOG))
+WORDS = ("build", "wait", "talk", "test", "done")
 OWNER_ROLES = ROLES + ("baseline",)
 METHODS = ("get", "put", "post", "delete", "patch", "head", "options", "trace")
 SKIP_DIRS = {".git", ".venv", "node_modules", "__pycache__", ".next", ".ga"}
@@ -307,6 +325,8 @@ def check_work(c: Check, rows: list[tuple[str, str, bool]]) -> None:
             c.bad("work", f"bad id {iid!r}")
         if it.get("role") not in ROLES:
             c.bad("work", f"{iid}: unknown role {it.get('role')!r}")
+        if it.get("runner") not in RUNNERS:
+            c.bad("work", f"{iid}: runner must be one of {RUNNERS}")
         if it.get("kind") not in ("feature", "contract"):
             c.bad("work", f"{iid}: kind must be feature or contract")
         if not str(it.get("goal", "")).strip():
@@ -360,6 +380,87 @@ def check_work(c: Check, rows: list[tuple[str, str, bool]]) -> None:
                         c.bad("work", f"{a['id']} and {b['id']} both own {fa} / {fb} and neither depends on the other")
 
 
+def screen_signals(text: str) -> list[str]:
+    m = re.search(r"^## screen: live_monitor — .+?$(.*?)(?=^## |\Z)", text, re.M | re.S)
+    line = re.search(r"^- signals: (.*)$", m.group(1), re.M) if m else None
+    return re.findall(r"`((?:file|derived):[a-z_.]+)`", line.group(1)) if line else []
+
+
+def check_encoding(c: Check) -> None:
+    raw = c.read("design/encoding.json")
+    if not raw:
+        return
+    try:
+        enc = json.loads(raw)
+        entries = {e["signal"]: e for e in enc["signals"]}
+    except (ValueError, KeyError, TypeError) as e:
+        c.bad("encoding", f"design/encoding.json unreadable: {e!r}")
+        return
+    required = [f"l0:{k}" for k in L0_KINDS] + screen_signals(c.read("docs/visualization.md"))
+    if not screen_signals(c.read("docs/visualization.md")):
+        c.bad("encoding", "visualization.md live_monitor has no signals line")
+    banned = [w.lower() for w in enc.get("glossary_banned_on_stage", [])]
+    must_show = {f"l0:{k}" for k in L0_KINDS_GA} | {s for s in required if not s.startswith("l0:")}
+    for sig in required:
+        e = entries.get(sig)
+        if e is None:
+            c.bad("encoding", f"{sig} has no visual encoding in design/encoding.json")
+            continue
+        if e.get("visual") == "none":
+            if sig in must_show:
+                c.bad("encoding", f"{sig} is observable in ga 0.6 but has visual 'none'")
+            elif not e.get("reason"):
+                c.bad("encoding", f"{sig} has visual 'none' without a reason")
+            continue
+        for key in ("visual", "motion", "reduced_motion", "not_color_only"):
+            if not str(e.get(key) or "").strip():
+                c.bad("encoding", f"{sig} has no {key}")
+    for sig, e in entries.items():
+        w = e.get("word")
+        if w is not None and w not in WORDS:
+            c.bad("encoding", f"{sig} word {w!r} is not one of {WORDS}")
+        if w is not None and w.lower() in banned:
+            c.bad("encoding", f"{sig} word {w!r} is a banned on-stage term")
+
+
+def luminance(hexcolor: str) -> float:
+    h = hexcolor.lstrip("#")
+    ch = [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)]
+    ch = [x / 12.92 if x <= 0.03928 else ((x + 0.055) / 1.055) ** 2.4 for x in ch]
+    return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2]
+
+
+def contrast(a: str, b: str) -> float:
+    hi, lo = sorted((luminance(a), luminance(b)), reverse=True)
+    return (hi + 0.05) / (lo + 0.05)
+
+
+def check_ui(c: Check) -> None:
+    raw = c.read("design/tokens.json")
+    if raw:
+        try:
+            tok = json.loads(raw)
+            for pair in tok["contrast_pairs"]:
+                th = tok["themes"][pair["theme"]]
+                got = contrast(th[pair["fg"]], th[pair["bg"]])
+                if got + 1e-9 < pair["min"]:
+                    c.bad("ui", f"{pair['theme']} {pair['fg']} on {pair['bg']}: contrast {got:.2f} < {pair['min']}")
+            gap = tok.get("series_min_lightness_gap", 0)
+            for name, th in tok["themes"].items():
+                lums = sorted(luminance(v) for v in th["series"].values())
+                for x, y in zip(lums, lums[1:]):
+                    if y - x < gap:
+                        c.bad("ui", f"{name} series colors too close in luminance ({x:.3f} vs {y:.3f} < {gap})")
+        except (ValueError, KeyError, TypeError) as e:
+            c.bad("ui", f"design/tokens.json unreadable: {e!r}")
+    c.read("docs/ui-design.md")
+    wf = c.read("docs/ui/wireframes.md")
+    have = set(re.findall(r"^## screen: (\w+)", wf, re.M))
+    for scr in SCREENS:
+        if scr not in have:
+            c.bad("ui", f"docs/ui/wireframes.md has no wireframe for screen {scr}")
+
+
 def run(root: Path) -> list[str]:
     c = Check(root)
     sections = domain_sections(c.read("docs/domain-model.md"))
@@ -368,6 +469,8 @@ def run(root: Path) -> list[str]:
     paths = check_openapi(c)
     check_screens(c, paths)
     check_advisor(c)
+    check_encoding(c)
+    check_ui(c)
     rows = check_ownership(c)
     check_work(c, rows)
     return c.problems

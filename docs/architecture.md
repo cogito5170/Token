@@ -24,7 +24,11 @@ ga Console 은 사용자의 AI 사용 기록을 받아 **정규화 → 분석 �
 
 - **프로세스 2 종:** `api`(FastAPI, uvicorn), `worker`(같은 코드베이스, `python -m app.worker`). 둘 다 같은 도메인 패키지를 쓴다.
 - **저장소 1 종:** PostgreSQL. 큐도 PostgreSQL 테이블(`ingest_jobs`)로 시작한다(ADR-0003). 업로드 원본은 객체 저장소 경로(로컬 디스크 → S3 호환)로 두고 DB 에는 메타데이터만.
-- **실시간:** SSE. MVP 에서는 수집 작업 진행 이벤트(`ingest_job_events`)만 흐른다. ga 실행 스트림(Run 도메인)은 설계만 하고 **나중**으로 표시한다.
+- **실시간:** SSE.
+  - MVP 에서는 수집 작업 진행 이벤트(`ingest_job_events`)만 흐른다.
+  - 1b 에서는 라이브 모니터 이벤트(`monitor-event/1`, `.ga` 를 읽기만 함)가 더해진다.
+  - 플랫폼 안 ga 실행 스트림은 **나중**이다.
+- **데스크톱 셸(1b):** Electron 이 같은 Next.js 화면을 감싼다. 로컬 `.ga` 는 Run 도메인의 읽기 전용 리더를 사이드카(127.0.0.1)로 띄워 읽으므로 서버가 필요 없다(ADR-0008).
 
 ## 2. 도메인 (사양 8 절)
 
@@ -46,7 +50,7 @@ ga Console 은 사용자의 AI 사용 기록을 받아 **정규화 → 분석 �
 | `notification` | Notification | 앱 내 알림 · 이메일(나중: Slack) | MVP(앱 내) | core-backend |
 | `audit` | Audit | 승인 · 실행 · 설정 변경의 추가 전용 감사 로그 | MVP | core-backend |
 | `integration` | Integration | 외부 연동(GitHub · Slack) · 공급자 키 암호 보관 | 나중(스키마만) | core-backend |
-| `run` | Run | 플랫폼 안 ga 실행 · 노드 · 판정 (나중) | 나중 | core-backend |
+| `run` | Run | 라이브 모니터 읽기 모델(`.ga` 읽기 전용, 1b) · 플랫폼 안 ga 실행(나중) | 1b / 나중 | core-backend |
 
 ## 3. 도메인 간 규칙
 

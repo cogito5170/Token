@@ -6,7 +6,8 @@
 
 - 접두사 `/v1`. 워크스페이스 데이터는 `/v1/workspaces/{ws}/…` 아래에만 둔다. 서버는 모든 요청에서 `workspace.require_member(ws, user, min_role)` 를 먼저 부른다.
 - 경로 항목마다 `x-domain` 이 정확히 하나다(`scripts/check_docs.py` 검사). 라우터 파일은 `backend/app/domains/<domain>/router.py` 이고, 그 도메인의 경로만 등록한다.
-- `x-later: true` = Run 도메인, MVP 에서 구현하지 않는다(라우터 미등록, 프런트엔드는 화면을 숨긴다).
+- `x-later: true` = Run 도메인의 실행 부분이다. MVP 에서 구현하지 않는다(라우터 미등록, 프런트엔드는 화면을 숨긴다).
+- `/monitor/*` 는 1b 다. 데스크톱 사이드카도 같은 GET 경로를 낸다(ws = nil UUID, 토큰 헤더, 127.0.0.1 만; ADR-0008).
 - 인증: `Authorization: Bearer <JWT>` (15 분). 리프레시는 httpOnly · Secure · SameSite=Strict 쿠키 `gc_refresh`, `/v1/auth/refresh` 에서 회전.
 - 오류: `{code, message, request_id}`. `message` 에 업로드 내용 · 키 · 비밀번호를 넣지 않는다. 상태 코드: 400 형식, 401 인증, 403 역할, 404 범위 밖(존재 여부를 숨긴다), 409 상태 충돌, 413 크기, 422 의미 오류.
 - 페이지: 커서 방식 `?cursor=` → 응답 `next_cursor`.
@@ -19,6 +20,7 @@
 | 경로 | 이벤트 | 데이터 | 끝 |
 |---|---|---|---|
 | `GET /v1/workspaces/{ws}/ingest-jobs/{job}/events` (MVP) | `progress`, `done`, `failed` | `IngestJobEvent` (`seq`, `stage`, `pct`, `counts`) | `done` · `failed` 뒤 닫음 |
+| `GET /v1/workspaces/{ws}/monitor/sources/{source}/events` (1b) | `<MonitorEvent.kind>` (예: `l0:run.end`, `file:queue.done`, `derived:stall`) | `MonitorEvent` (monitor-event/1) | 끝나지 않음(읽기 전용, 조작 엔드포인트 없음) |
 | `GET /v1/workspaces/{ws}/runs/{run}/events` (나중) | `node.started`, `turn`, `wait`, `node.retired`, `item.state` | `run_events` 행 | 실행 종료 |
 
 - 형식: `id: <seq>\nevent: <name>\ndata: <json>\n\n`. 15 초마다 `: ping`.
@@ -44,7 +46,7 @@
 | notification | `/v1/notifications*`, `/v1/notification-prefs` |
 | audit | `/{ws}/audit-log` |
 | integration | `/{ws}/integrations`, `/{ws}/provider-credentials*` |
-| run (나중) | `/{ws}/runs*` |
+| run | 1b: `/{ws}/monitor/sources*` (snapshot · events · recordings, GET 만; 등록 POST 는 admin) · 나중: `/{ws}/runs*` |
 
 운영용 `/healthz`, `/readyz` 는 공개 계약 밖이다(`backend/app/main.py`, infra 담당, 인증 없음, 데이터 없음).
 

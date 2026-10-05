@@ -643,6 +643,81 @@ paths:
       responses:
         '204': {description: revoked}
 
+  # ------------------------------------------------------------------ run: live monitor (phase 1b, read-only)
+  /v1/workspaces/{ws}/monitor/sources:
+    x-domain: run
+    parameters: [{$ref: '#/components/parameters/ws'}]
+    get:
+      tags: [run]
+      operationId: listMonitorSources
+      description: Registered local .ga directories. In the desktop sidecar ws is the nil UUID and the one directory is preset.
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/MonitorSource'}}}}}
+    post:
+      tags: [run]
+      operationId: registerMonitorSource
+      description: Admin only, audited. Registers a path to read; the platform never writes inside it.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [label, path]
+              properties:
+                label: {type: string}
+                path: {type: string}
+      responses:
+        '201': {description: registered, content: {application/json: {schema: {$ref: '#/components/schemas/MonitorSource'}}}}
+  /v1/workspaces/{ws}/monitor/sources/{source}/snapshot:
+    x-domain: run
+    parameters: [{$ref: '#/components/parameters/ws'}, {$ref: '#/components/parameters/source'}]
+    get:
+      tags: [run]
+      operationId: monitorSnapshot
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/MonitorSnapshot'}}}}
+  /v1/workspaces/{ws}/monitor/sources/{source}/events:
+    x-domain: run
+    parameters: [{$ref: '#/components/parameters/ws'}, {$ref: '#/components/parameters/source'}]
+    get:
+      tags: [run]
+      operationId: streamMonitorEvents
+      description: |
+        Server-Sent Events of MonitorEvent (monitor-event/1). `id: <seq>`, `event: <kind>`, `data: <MonitorEvent JSON>`.
+        Resume with Last-Event-ID. Heartbeat comment every 15 s. Read-only: there is no control endpoint.
+      parameters:
+        - {name: Last-Event-ID, in: header, required: false, schema: {type: integer, minimum: 0}}
+      responses:
+        '200':
+          description: event stream
+          content:
+            text/event-stream:
+              schema: {type: string}
+              x-event-schema: {$ref: '#/components/schemas/MonitorEvent'}
+  /v1/workspaces/{ws}/monitor/sources/{source}/recordings:
+    x-domain: run
+    parameters: [{$ref: '#/components/parameters/ws'}, {$ref: '#/components/parameters/source'}]
+    get:
+      tags: [run]
+      operationId: listMonitorRecordings
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/MonitorRecording'}}}}}
+  /v1/workspaces/{ws}/monitor/sources/{source}/recordings/{recording}:
+    x-domain: run
+    parameters: [{$ref: '#/components/parameters/ws'}, {$ref: '#/components/parameters/source'}, {name: recording, in: path, required: true, schema: {type: string, format: uuid}}]
+    get:
+      tags: [run]
+      operationId: getMonitorRecording
+      description: The recorded MonitorEvent JSONL, for timeline replay.
+      responses:
+        '200':
+          description: recording
+          content:
+            application/x-ndjson:
+              schema: {type: string}
+              x-line-schema: {$ref: '#/components/schemas/MonitorEvent'}
+
   # ------------------------------------------------------------------ run (later)
   /v1/workspaces/{ws}/runs:
     x-domain: run
@@ -734,6 +809,7 @@ components:
     budget: {name: budget, in: path, required: true, schema: {type: string, format: uuid}}
     proposal: {name: proposal, in: path, required: true, schema: {type: string, format: uuid}}
     run: {name: run, in: path, required: true, schema: {type: string, format: uuid}}
+    source: {name: source, in: path, required: true, schema: {type: string, format: uuid}}
     from: {name: from, in: query, required: false, schema: {type: string, format: date-time}}
     to: {name: to, in: query, required: false, schema: {type: string, format: date-time}}
     project: {name: project, in: query, required: false, schema: {type: string, format: uuid}}
@@ -1503,3 +1579,94 @@ components:
         mutants_total: {type: [integer, 'null']}
         preexisting_failures: {type: integer}
         verdict: {type: string, enum: [pass, fail, partial]}
+
+    MonitorSource:
+      type: object
+      required: [id, label, path]
+      properties:
+        id: {type: string, format: uuid}
+        label: {type: string}
+        path: {type: string}
+        reachable: {type: boolean}
+    MonitorEvent:
+      type: object
+      description: monitor-event/1. kind is a signal name of design/encoding.json (l0:<type>, file:<signal>, derived:<mood>).
+      required: [seq, observed_at, kind, data, provenance]
+      properties:
+        seq: {type: integer}
+        observed_at: {type: string, format: date-time, description: When the reader first saw the change (ga 0.6 L0 has no time).}
+        kind: {type: string, pattern: '^(l0|file|derived):[a-z_.]+$'}
+        node: {type: [string, 'null']}
+        role: {type: [string, 'null']}
+        item: {type: [string, 'null']}
+        peer: {type: [string, 'null']}
+        data: {type: object}
+        source_file: {type: [string, 'null']}
+        provenance: {$ref: '#/components/schemas/Provenance'}
+    MonitorFigure:
+      type: object
+      required: [node, role, shape_index, state]
+      properties:
+        node: {type: string}
+        role: {type: string}
+        shape_index: {type: integer, minimum: 0, maximum: 5}
+        state: {type: string, enum: [idle, running, waiting_peer, continuing, retiring, retired]}
+        item: {type: [string, 'null']}
+        elapsed_ms: {type: [integer, 'null'], description: CALCULATED from observed_at.}
+        turns: {type: integer}
+        tokens: {type: [integer, 'null'], description: MEASURED (run.end reported).}
+        cost_cli_microusd: {type: [integer, 'null'], description: MEASURED (run.end cost_usd).}
+        ring: {type: [string, 'null'], enum: [closed, jagged, open, flat, null]}
+    MonitorSnapshot:
+      type: object
+      required: [observed_at, figures, tiles, edges, meters, mood]
+      properties:
+        observed_at: {type: string, format: date-time}
+        round: {type: [integer, 'null']}
+        figures: {type: array, items: {$ref: '#/components/schemas/MonitorFigure'}}
+        tiles:
+          type: array
+          items:
+            type: object
+            required: [id, shelf]
+            properties:
+              id: {type: string}
+              role: {type: [string, 'null']}
+              shelf: {type: string, enum: [waiting, held, done, failed]}
+              holder: {type: [string, 'null']}
+              parent: {type: [string, 'null']}
+        edges:
+          type: array
+          items:
+            type: object
+            required: [a, b, messages]
+            properties:
+              a: {type: string}
+              b: {type: string}
+              pi_permille: {type: [integer, 'null']}
+              messages: {type: integer}
+        meters:
+          type: object
+          properties:
+            tokens_total: {type: [integer, 'null']}
+            cost_cli_microusd: {type: [integer, 'null']}
+            budget_microusd: {type: [integer, 'null']}
+            budget_use_permille: {type: [integer, 'null']}
+        mood:
+          type: object
+          required: [pace, collaboration, stall, tension, all_done]
+          properties:
+            pace: {type: integer, description: events per minute}
+            collaboration: {type: boolean}
+            stall: {type: boolean}
+            tension: {type: boolean}
+            all_done: {type: boolean}
+    MonitorRecording:
+      type: object
+      required: [id, started_at, events]
+      properties:
+        id: {type: string, format: uuid}
+        started_at: {type: string, format: date-time}
+        ended_at: {type: [string, 'null'], format: date-time}
+        events: {type: integer}
+        reader_version: {type: string}

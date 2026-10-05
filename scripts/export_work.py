@@ -40,7 +40,7 @@ def ordered(items: list[dict]) -> list[dict]:
 def to_work(it: dict) -> dict:
     goal = (f"{it['goal']}\nOwns only: {', '.join(it['files'])}.\n"
             f"Depends on: {', '.join(it.get('depends_on', [])) or 'nothing'}; interfaces: {'; '.join(it.get('interfaces', []))}.\n"
-            f"Done when: {it.get('done_when_text', '')}.\n"
+            f"Done when: {it.get('done_when_text', '')} (runner: {it.get('runner', 'unittest')}).\n"
             f"Kind: {it['kind']}. Contracts (docs/ownership.md contract=yes) change only in a contract item.")
     return {"schema": "work/1", "id": it["id"], "role": it["role"], "goal": goal,
             "uses": ["docs/architecture.md", "docs/ownership.md"], "check": it["done_when"]}

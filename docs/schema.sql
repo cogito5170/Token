@@ -560,6 +560,29 @@ CREATE TABLE provider_credentials (
     revoked_at      timestamptz
 );
 
+-- ======================================================================== run: live monitor (phase 1b)
+-- owner: run
+CREATE TABLE ga_dirs (
+    id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    workspace_id    uuid NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+    label           text NOT NULL,
+    path            text NOT NULL,                       -- local .ga directory, opened read-only
+    created_by      uuid NOT NULL REFERENCES users(id),
+    created_at      timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (workspace_id, path)
+);
+
+-- owner: run
+CREATE TABLE monitor_recordings (
+    id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    ga_dir_id       uuid NOT NULL REFERENCES ga_dirs(id) ON DELETE CASCADE,
+    started_at      timestamptz NOT NULL,
+    ended_at        timestamptz,
+    events          bigint NOT NULL DEFAULT 0,
+    storage_path    text NOT NULL,                       -- monitor-event/1 JSONL in the object store
+    reader_version  text NOT NULL
+);
+
 -- ======================================================================== run (later)
 -- owner: run
 CREATE TABLE runs (

@@ -2,7 +2,7 @@
 
 저장소의 **모든 파일은 아래 패턴 중 정확히 하나**에 맞는다(`scripts/check_docs.py` 가 `.git`, `.venv`, `node_modules`, `__pycache__`, `.next` 를 뺀 모든 파일로 검사한다). 패턴 문법: `**` = 아무 경로(슬래시 포함), `*` = 슬래시 없는 아무 글자.
 
-- `role`: frontend · core-backend · ingestion-analytics · consulting · infra 중 하나. `baseline` 은 이 저장소의 작업 항목이 쓰지 않는 파일(사양 · 세션 보고)이다.
+- `role`: design · frontend · core-backend · ingestion-analytics · consulting · infra 중 하나(design 은 사양 7.1, 2026-10-05 추가). `baseline` 은 이 저장소의 작업 항목이 쓰지 않는 파일(사양 · 세션 보고)이다.
 - `contract = yes`: 공유 계약. `"kind": "contract"` 작업만 이 파일을 `files` 에 넣을 수 있다. 다른 작업은 읽기만 한다.
 - 작업 항목(roadmap.md)의 `files` 는 자기 role 의 행 안에 있어야 한다. 서로 의존 관계가 없는 두 작업은 같은 파일을 가질 수 없다.
 
@@ -56,7 +56,12 @@
 | `backend/app/domains/report/**` | consulting | no |
 | `scripts/backtest_estimator.py` | consulting | no |
 | `fixtures/final_task/**` | consulting | no |
+| `design/**` | design | no |
+| `docs/ui-design.md` | design | yes |
+| `docs/ui/**` | design | yes |
 | `frontend/**` | frontend | no |
+| `fixtures/monitor/**` | core-backend | no |
+| `desktop/**` | infra | no |
 | `infra/**` | infra | no |
 | `.github/**` | infra | no |
 | `Makefile` | infra | no |
@@ -68,8 +73,10 @@
 
 | 도메인 | 역할 |
 |---|---|
-| identity · workspace · quota · notification · audit · integration · run | core-backend |
+| identity · workspace · quota · notification · audit · integration · run (모니터 리더 포함) | core-backend |
 | source · ingestion · usage | ingestion-analytics |
 | estimation · advisor · simulation · profile · report | consulting |
 
 `fixtures/advisor/**` 는 advisor 규칙의 기대값(계약)이라 contract 이다. 규칙 구현(consulting)은 이것을 읽고 맞춘다.
+
+시각 언어(`design/**`: 토큰 · 신호 대응표 · 움직임 규칙 · golden 장면)는 design 역할이 소유하고, frontend 는 읽기만 한다. `docs/ui-design.md` 와 `docs/ui/**` 는 frontend 가 따르는 계약이라 contract 다.

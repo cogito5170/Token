@@ -66,3 +66,13 @@ advisor finding / simulation / recommendation / (나중) run 노드
 - 설정은 환경 변수 이름만 코드에 있다. 저장소에는 `.env.example` (값 없음)만 있다.
 - 비밀 환경 변수: `GC_JWT_SECRET`, `GC_KEK_<id>`, `TELEMETRY_HASH_KEY`, `DATABASE_URL`. 로그 시작 시 설정 덤프에서 제외.
 - CI 는 `git grep` 으로 키 모양 문자열을 검사한다(roadmap infra 작업).
+
+## 8. 라이브 모니터 (1b)
+
+- `.ga` 는 **읽기 전용**이다. 리더는 파일을 읽기 모드로만 열고, 잠그지 않고, 아무것도 만들지 않는다. 시험(CMD-RN1)이 읽은 파일의 바이트와 mtime 이 그대로인지 확인한다.
+- 조작 엔드포인트가 없다. 노드를 멈추거나 바꾸는 기능은 나중이며 Proposal 게이트 뒤에 온다.
+- 서버 모드에서 `.ga` 경로 등록은 admin 만 하고 감사에 남긴다(`monitor_source.register`). 경로는 설정된 허용 루트(`GC_MONITOR_ROOTS`) 아래만 허용해 경로 탈출을 막는다.
+- 데스크톱:
+  - 사이드카는 127.0.0.1 에만 바인드하고, 실행마다 새 토큰을 쓰고, GET/HEAD 만 받는다.
+  - 렌더러는 Node · 파일에 접근하지 못한다(ADR-0008).
+- 모니터는 메시지 본문(ga-mailbox)과 프롬프트를 읽지 않는다. 툴팁 숫자도 L0 의 토큰 · 비용 · 바이트뿐이다.
