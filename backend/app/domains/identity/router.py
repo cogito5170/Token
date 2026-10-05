@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from app.core import events
 from app.core.config import load_settings
+from app.domains.audit.api import record as audit_record
 
 from .passwords import Argon2Hasher
 from .service import AuthError, IdentityService
@@ -19,7 +20,7 @@ _audit = None
 
 
 def set_audit_recorder(fn) -> None:
-    """Wire audit.api.record here once GC15 lands; until then audit is a no-op."""
+    """Swap the audit recorder (tests inject a fake); the default is audit.api.record, wired below."""
     global _audit, _service
     _audit, _service = fn, None
 
@@ -35,6 +36,9 @@ def get_service() -> IdentityService:
         _service = IdentityService(PgStore(get_pool()), Argon2Hasher(), load_settings().jwt_secret or "",
                                    publish=events.bus.publish, **kw)
     return _service
+
+
+set_audit_recorder(audit_record)
 
 
 class SignupRequest(BaseModel):
