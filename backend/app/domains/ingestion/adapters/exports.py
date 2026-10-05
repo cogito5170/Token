@@ -18,9 +18,12 @@ COLUMNS = {
     "anthropic": {"uncached_input_tokens": "input_tokens", "input_tokens": "input_tokens",
                   "cache_read_input_tokens": "cache_read_input_tokens",
                   "cache_creation_input_tokens": "cache_creation_input_tokens", "output_tokens": "output_tokens"},
-    "openai": {"input_tokens": "input_tokens", "prompt_tokens": "input_tokens",
-               "input_cached_tokens": "input_cached_tokens", "cached_tokens": "input_cached_tokens",
-               "output_tokens": "output_tokens", "completion_tokens": "output_tokens"},
+    # OpenAI: dotted target = nested details dict (l0_usage reads prompt_tokens_details.cached_tokens etc.)
+    "openai": {"input_tokens": "prompt_tokens", "prompt_tokens": "prompt_tokens",
+               "input_cached_tokens": "prompt_tokens_details.cached_tokens",
+               "cached_tokens": "prompt_tokens_details.cached_tokens",
+               "output_tokens": "completion_tokens", "completion_tokens": "completion_tokens",
+               "reasoning_tokens": "completion_tokens_details.reasoning_tokens"},
 }
 MODEL_COLS = ("model", "model_id", "snapshot_id")
 TIME_COLS = ("starting_at", "start_time", "date", "bucket_start", "timestamp")
@@ -70,7 +73,11 @@ class ExportAdapter:
             if not isinstance(row, dict):
                 yield registry.ParsedReject(n, "bad_row")
                 continue
-            u = {key: _num(row[col]) for col, key in cmap.items() if row.get(col) not in (None, "")}
+            u: dict = {}
+            for col, key in cmap.items():
+                if row.get(col) not in (None, ""):
+                    head, _, leaf = key.partition(".")
+                    (u.setdefault(head, {}) if leaf else u)[leaf or head] = _num(row[col])
             model = next((row[c] for c in MODEL_COLS if row.get(c)), None)
             if not u or not model:
                 yield registry.ParsedReject(n, "bad_row")

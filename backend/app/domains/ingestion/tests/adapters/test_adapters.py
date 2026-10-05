@@ -117,8 +117,17 @@ class L0TokensTests(unittest.TestCase):
         self.assertEqual((t["cache_write_5m_tokens"], t["cache_write_1h_tokens"]), (4, 5))
 
     def test_export_adapter_unpacks_tuple_from_l0_usage(self):
-        stub = lambda provider, u: ({"input_tokens": 600, "cache_read_input_tokens": 400, "output_tokens": None},
-                                    ["output_tokens"])
+        seen = {}
+
+        def stub(provider, u):  # mirrors l0_usage's openai branch at f6c7ae2: nested details, returns a tuple
+            seen.update(u)
+            det = u.get("prompt_tokens_details") or {}
+            pt, cached = u.get("prompt_tokens"), det.get("cached_tokens")
+            out = {}
+            if pt is not None and cached is not None:
+                out["input_tokens"], out["cache_read_input_tokens"] = pt - cached, cached
+            out["output_tokens"] = u.get("completion_tokens")
+            return out, []
         saved = fake_modules(**{"telemetry.usage": {"l0_usage": stub}})
         try:
             out = calls(openai_export().parse(io.BytesIO(
@@ -126,6 +135,7 @@ class L0TokensTests(unittest.TestCase):
         finally:
             restore(saved)
         self.assertEqual((out[0].input_tokens, out[0].cache_read_tokens, out[0].output_tokens), (600, 400, None))
+        self.assertEqual(seen["prompt_tokens_details"], {"cached_tokens": 400})
 
 
 class MappingWithStubbedParsers(unittest.TestCase):

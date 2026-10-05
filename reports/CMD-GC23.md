@@ -24,3 +24,5 @@
 - `l0_usage` 는 `(fields, null_names)` 튜플을 돌려준다: exports.py 가 풀어서 쓰고, `common.l0_tokens` 가 l0 이름 → CallIn 열로 옮긴다(null 은 None 유지, 5m/1h 분할이 없으면 총 캐시 쓰기를 5m 열에).
 - 열 매핑 표를 "내보내기 열 → usage dict 키" 로 바로잡았다(이전엔 열 이름을 그대로 l0_usage 에 넘김). OpenAI 의 키 이름(`input_tokens`, `input_cached_tokens`, `output_tokens`)은 실제 l0_usage 로 확인하지 못했다 — 실패하면 baseline 재실행에서 알려 달라.
 - 스텁 테스트가 튜플 형태를 쓰도록 `L0TokensTests` 추가. 테스트 15개: 11 통과, 4 skip(패키지 필요).
+
+- OpenAI 열 매핑이 l0_usage 의 중첩 형태(`prompt_tokens`, `prompt_tokens_details.cached_tokens`, `completion_tokens`)로 dict 를 만든다. 스텁도 같은 중첩을 읽는다.
