@@ -23,8 +23,6 @@ def get_service() -> ReportService:
 
         from .pg_store import PgStore
 
-        # quota.api exposes no budget list yet (request to baseline): without one the budget section is empty.
-        budgets = getattr(quota, "list_budgets", lambda ws: [])
-        _service = ReportService(PgStore(get_pool()), summary, list_findings, budgets, quota.burn, audit=record,
+        _service = ReportService(PgStore(get_pool()), summary, list_findings, quota.list_budgets, quota.burn, audit=record,
                                  publish=events.bus.publish)
     return _service

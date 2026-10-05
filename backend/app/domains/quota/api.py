@@ -19,3 +19,12 @@ def burn(ws, budget_id) -> dict:
 
 def evaluate(ws):
     return get_service().evaluate(ws)
+
+
+def list_budgets(ws) -> list[dict]:
+    """Active budgets of a workspace as plain dicts (id, scope, period, measure, limit_microusd, thresholds,
+    action_at_limit, project_id); archived budgets are left out."""
+    return [{"id": b.id, "scope": b.scope, "period": b.period, "measure": b.measure,
+             "limit_microusd": b.limit_microusd, "thresholds": list(b.thresholds),
+             "action_at_limit": b.action_at_limit, "project_id": b.project_id}
+            for b in get_service().store.list_budgets(ws)]

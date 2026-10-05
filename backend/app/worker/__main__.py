@@ -12,12 +12,14 @@ POLL_S = 1.0
 def main() -> None:
     from app.core.config import load_settings
     from app.core.db import open_pool
+    from app.api.wiring import wire_worker
     from app.domains.ingestion.wiring import get_service
 
     s = load_settings()
     if not s.database_url:
         raise SystemExit("DATABASE_URL is not set")
     open_pool(s.database_url)
+    wire_worker()
     svc = get_service()
     me = f"{socket.gethostname()}:{os.getpid()}"
     stop = []
