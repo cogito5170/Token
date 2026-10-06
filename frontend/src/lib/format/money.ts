@@ -33,8 +33,18 @@ export function formatTokensCompact(v: number | null | undefined): string {
   if (v === null || v === undefined || !Number.isFinite(v)) return EM_DASH;
   const a = Math.abs(v);
   const s = v < 0 ? "-" : "";
-  for (const [d, u] of [[1e9, "B"], [1e6, "M"], [1e3, "K"]] as const) {
-    if (a >= d) return `${s}${(Math.round((a / d) * 10) / 10).toString()}${u}`;
+  const units = [
+    [1e9, "B"],
+    [1e6, "M"],
+    [1e3, "K"],
+  ] as const;
+  for (let i = 0; i < units.length; i++) {
+    const [d, u] = units[i];
+    if (a >= d) {
+      const val = Math.round((a / d) * 10) / 10;
+      if (val >= 1000 && i > 0) return `${s}1${units[i - 1][1]}`;
+      return `${s}${val}${u}`;
+    }
   }
   return s + String(Math.trunc(a));
 }
