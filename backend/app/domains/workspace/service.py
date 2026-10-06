@@ -204,7 +204,7 @@ class WorkspaceService:
         name = (name or "").strip()
         if not name or len(name) > 100:
             raise WorkspaceError("invalid_request", "name must be 1-100 characters", 422)
-        if repo_size_loc is not None and repo_size_loc < 0:
+        if repo_size_loc is not None and (type(repo_size_loc) is not int or repo_size_loc < 0):
             raise WorkspaceError("invalid_request", "repo_size_loc must be >= 0", 422)
         p = self.store.create_project(ProjectRow(str(uuid.uuid4()), ws, name, repo_url, language, repo_size_loc))
         if p is None:
