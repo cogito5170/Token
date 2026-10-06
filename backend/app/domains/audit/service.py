@@ -55,7 +55,7 @@ def check_detail(detail, path: str = "detail") -> None:
         for k, v in detail.items():
             if not isinstance(k, str):
                 raise AuditError(422, "audit.detail_invalid", f"{path}: keys must be strings")
-            if _KEY_RULE.search(k) and not _KEY_OK_SUFFIX.search(k) and v not in (None, "", False, 0):
+            if _KEY_RULE.search(k) and not _KEY_OK_SUFFIX.search(k) and k not in {"input_tokens","output_tokens","cache_read_tokens","max_tokens"} and v not in (None, "", False, 0):
                 raise AuditError(422, "audit.detail_secret", f"{path}.{k}: secret-named field")
             check_detail(v, f"{path}.{k}")
     elif isinstance(detail, (list, tuple)):
