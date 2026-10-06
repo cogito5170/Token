@@ -188,7 +188,9 @@ class EstimationService:
         days: dict[str, list[int]] = {}
         for o in rows:
             if "total_tokens" in o["oc"]:
-                d = _utc(o["at"]).strftime("%Y-%m-%dT00:00:00Z")
+                at = o["at"]
+                at_utc = at - at.utcoffset() if at.tzinfo is not None else at
+                d = at_utc.strftime("%Y-%m-%dT00:00:00Z")
                 days.setdefault(d, []).append(o["oc"]["total_tokens"]["ape_permille"])
         points = [[d, round(sum(v) / len(v))] for d, v in sorted(days.items())]
         return {"n": tok["n"], "mape_tokens": metric(tok["mape_permille"]), "mape_cost": metric(cost_mape),
