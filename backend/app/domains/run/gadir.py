@@ -333,9 +333,17 @@ def _int(v):
     return v if isinstance(v, int) and not isinstance(v, bool) else None
 
 
+import math
+
 def _permille(v):
     try:
-        return max(0, min(1000, int(round(float(v) * 1000))))
+        # Convert to float and handle special cases
+        val = float(v)
+        if math.isinf(val):
+            return 1000 if val > 0 else 0
+        if math.isnan(val):
+            return 0
+        return max(0, min(1000, int(round(val * 1000))))
     except (TypeError, ValueError):
         return 0
 
