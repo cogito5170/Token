@@ -1,1 +1,16 @@
-/* Screen styles for the gc-* classes the screens use (gc-screen, gc-form, gc-table, gc-empty, ...). Tokens only: var(--gc-*) from tokens.css. Written by CMD-AGA6. */
+/* Screen styles for the gc-* classes the screens use. Tokens only. */
+.gc-screen { display: grid; gap: var(--gc-space-4); }
+.gc-screen h1 { margin: 0; font-size: var(--gc-text-title); line-height: var(--gc-leading-tight); }
+.gc-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--gc-space-3); }
+.gc-form label { display: flex; flex-direction: column; gap: var(--gc-space-1); font-size: var(--gc-text-sm); color: var(--gc-color-muted); }
+.gc-form input, .gc-form select { padding: var(--gc-space-2); font: inherit; color: var(--gc-color-text); background: var(--gc-color-bg); border: 1px solid var(--gc-color-border); border-radius: var(--gc-radius-md); }
+.gc-form button { padding: var(--gc-space-2) var(--gc-space-4); font: inherit; font-weight: var(--gc-weight-medium); color: var(--gc-color-surface); background: var(--gc-color-accent); border: 0; border-radius: var(--gc-radius-md); cursor: pointer; }
+.gc-table { width: 100%; border-collapse: collapse; font-size: var(--gc-text-sm); }
+.gc-table th { text-align: left; font-weight: var(--gc-weight-semibold); color: var(--gc-color-muted); padding: var(--gc-space-2) var(--gc-space-3); border-bottom: 1px solid var(--gc-color-border); }
+.gc-table td { padding: var(--gc-space-2) var(--gc-space-3); border-bottom: 1px solid var(--gc-color-border); }
+.gc-table button { margin-right: var(--gc-space-1); padding: var(--gc-space-1) var(--gc-space-2); font: inherit; color: var(--gc-color-text); background: var(--gc-color-surface); border: 1px solid var(--gc-color-border); border-radius: var(--gc-radius-sm); cursor: pointer; }
+.gc-empty { padding: var(--gc-space-5); color: var(--gc-color-muted); background: var(--gc-color-surface); border-radius: var(--gc-radius-md); }
+.gc-error { padding: var(--gc-space-3); color: var(--gc-color-text); background: var(--gc-color-surface); border-left: 3px solid var(--gc-color-warm); border-radius: var(--gc-radius-sm); }
+.gc-kpi { font-size: var(--gc-text-kpi); font-weight: var(--gc-weight-semibold); line-height: var(--gc-leading-tight); }
+.gc-kpi-label { font-size: var(--gc-text-xs); color: var(--gc-color-muted); }
+.gc-legend { display: flex; flex-wrap: wrap; gap: var(--gc-space-3); padding: 0; list-style: none; font-size: var(--gc-text-sm); color: var(--gc-color-muted); }
