@@ -26,7 +26,7 @@ _VALUE_RULES = (
 )
 _KEY_RULE = re.compile(r"(?i)(password|passwd|secret|api[_-]?key|token|credential|private[_-]?key)")
 # counts / flags / ids named after secrets are fine, e.g. "token_count", "has_password"
-_KEY_OK_SUFFIX = re.compile(r"(?i)(_count|_id|_ids|_len|_at|_ttl|_fingerprint|_last4)$|^(has|is|rotated|revoked)_")
+_KEY_OK_SUFFIX = re.compile(r"(?i)(_count|_tokens|_id|_ids|_len|_at|_ttl|_fingerprint|_last4)$|^(has|is|rotated|revoked)_")
 
 
 class AuditError(Exception):
