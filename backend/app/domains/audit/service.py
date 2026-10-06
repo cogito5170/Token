@@ -26,7 +26,16 @@ _VALUE_RULES = (
 )
 _KEY_RULE = re.compile(r"(?i)(password|passwd|secret|api[_-]?key|token|credential|private[_-]?key)")
 # counts / flags / ids named after secrets are fine, e.g. "token_count", "has_password"
-_KEY_OK_SUFFIX = re.compile(r"(?i)(_count|_tokens|_id|_ids|_len|_at|_ttl|_fingerprint|_last4)$|^(has|is|rotated|revoked)_")
+_KEY_OK_SUFFIX = re.compile(r"(?i)(_count|_id|_ids|_len|_at|_ttl|_fingerprint|_last4)$|^(has|is|rotated|revoked)_")
+_TOKENS_SUFFIX = re.compile(r"(?i)_tokens$")
+
+
+def _is_key_ok(k: str, v: object) -> bool:
+    if _KEY_OK_SUFFIX.search(k):
+        return True
+    if _TOKENS_SUFFIX.search(k) and (v is None or (isinstance(v, (int, float)) and not isinstance(v, bool))):
+        return True
+    return False
 
 
 class AuditError(Exception):
@@ -55,7 +64,7 @@ def check_detail(detail, path: str = "detail") -> None:
         for k, v in detail.items():
             if not isinstance(k, str):
                 raise AuditError(422, "audit.detail_invalid", f"{path}: keys must be strings")
-            if _KEY_RULE.search(k) and not _KEY_OK_SUFFIX.search(k) and v not in (None, "", False, 0):
+            if _KEY_RULE.search(k) and not _is_key_ok(k, v) and v not in (None, "", False, 0):
                 raise AuditError(422, "audit.detail_secret", f"{path}.{k}: secret-named field")
             check_detail(v, f"{path}.{k}")
     elif isinstance(detail, (list, tuple)):
