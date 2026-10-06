@@ -43,7 +43,11 @@ export function formatTokensCompact(v: number | null | undefined): string {
 export function formatPermille(v: number | null | undefined): string {
   if (v === null || v === undefined || !Number.isFinite(v)) return EM_DASH;
   const t = Math.round(v);
-  return `${Math.floor(t / 10)}${t % 10 ? "." + (t % 10) : ""}%`;
+  const sign = t < 0 ? "-" : "";
+  const abs = Math.abs(t);
+  const integerPart = Math.floor(abs / 10);
+  const fraction = abs % 10;
+  return `${sign}${integerPart}${fraction ? "." + fraction : ""}%`;
 }
 
 export function formatCount(v: number | null | undefined): string {
