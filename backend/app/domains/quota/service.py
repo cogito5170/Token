@@ -241,7 +241,9 @@ class QuotaService:
     def check(self, ws: str, scope: str, extra_cost: int, project_id: str | None = None,
               cost_cli: int | None = None) -> dict:
         """Would `extra_cost` (list micro-USD; `cost_cli` for cli budgets, default = extra_cost) break a budget?"""
-        if scope not in SCOPES or not isinstance(extra_cost, int) or extra_cost < 0:
+        if scope not in SCOPES or type(extra_cost) is not int or extra_cost < 0:
+            raise QuotaError("invalid_request", "invalid check", 422)
+        if cost_cli is not None and (type(cost_cli) is not int or cost_cli < 0):
             raise QuotaError("invalid_request", "invalid check", 422)
         extra = {"list": extra_cost, "cli": extra_cost if cost_cli is None else cost_cli}
         blocked = []
