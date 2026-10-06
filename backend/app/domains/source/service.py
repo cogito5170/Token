@@ -133,6 +133,8 @@ def _valid_uuid(x) -> bool:
 
 def clean_filename(name: str | None) -> str:
     n = os.path.basename((name or "").replace("\\", "/")).strip()
+    if n in (".", ".."):
+        return "upload"
     return n[:255] or "upload"
 
 
