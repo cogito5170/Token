@@ -126,7 +126,7 @@ def _noop_audit(action: str, actor: str | None, detail: dict) -> None:
 
 def normalize_email(email: str) -> str:
     e = (email or "").strip()
-    if "@" not in e or e.startswith("@") or e.endswith("@") or len(e) > 254:
+    if e.count("@") != 1 or e.startswith("@") or e.endswith("@") or len(e) > 254 or any(c.isspace() for c in e):
         raise AuthError("invalid_email", "invalid email", 422)
     return e
 
