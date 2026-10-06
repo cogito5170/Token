@@ -1,0 +1,5 @@
+{"repo": "cogito5170/Token",
+ "setup": [["npm", "ci", "--prefix", "frontend", "--no-audit", "--no-fund"]],
+ "test": ["node", "frontend/node_modules/vitest/vitest.mjs", "run", "--root", "frontend", "--reporter=junit", "--outputFile=junit.xml"],
+ "junit": "frontend/junit.xml",
+ "timeout": 1800}
