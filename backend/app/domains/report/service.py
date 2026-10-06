@@ -102,7 +102,7 @@ class ReportService:
     def generate(self, ws: str, period: dict, actor: str | None = None) -> ReportRow:
         try:
             d_from, d_to = date.fromisoformat(str(period["from"])), date.fromisoformat(str(period["to"]))
-        except (KeyError, ValueError):
+        except (KeyError, ValueError, TypeError):
             raise ReportError("invalid_request", "period needs ISO dates from/to", 422) from None
         if d_to < d_from:
             raise ReportError("invalid_request", "period.to before period.from", 422)
