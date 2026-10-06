@@ -124,7 +124,7 @@ class QuotaService:
         except TypeError:
             raise QuotaError("invalid_request", "invalid budget", 422)
         bad = (scope not in SCOPES or period not in PERIODS or measure not in MEASURES
-               or action_at_limit not in ACTIONS or not isinstance(limit_microusd, int) or limit_microusd < 1
+               or action_at_limit not in ACTIONS or not isinstance(limit_microusd, int) or isinstance(limit_microusd, bool) or limit_microusd < 1
                or any(not 1 <= t <= 100 for t in th)
                or (scope == "project" and not project_id) or (scope != "project" and project_id)
                or (scope == "task") != (period == "task"))
