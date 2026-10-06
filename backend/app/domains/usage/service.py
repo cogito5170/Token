@@ -489,6 +489,11 @@ class UsageService:
 
     # -- charts ---------------------------------------------------------------------------------------------
     def summary(self, ws, t_from=None, t_to=None, project=None) -> dict:
+        from datetime import timezone
+        if t_from is not None and getattr(t_from, "tzinfo", None) is not None:
+            t_from = t_from.astimezone(timezone.utc)
+        if t_to is not None and getattr(t_to, "tzinfo", None) is not None:
+            t_to = t_to.astimezone(timezone.utc)
         frm, to = self._period(t_from, t_to)
         days = self.store.daily(ws, frm.astimezone(timezone.utc).date(), to.astimezone(timezone.utc).date(), project)
         tasks = self.store.tasks(ws, frm, to, project)
