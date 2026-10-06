@@ -72,10 +72,13 @@ export function createFakeFetch(extra: Record<string, FakeHandler> = {}) {
       if (m !== method) continue;
       const params = match(p, u.pathname);
       if (!params) continue;
-      const r = h(call, params) as { status?: number; body?: unknown } | undefined;
-      const wrapped = r && typeof r === "object" && ("status" in r || "body" in r);
-      const status = wrapped ? (r.status ?? 200) : 200;
-      const body = wrapped ? r.body : r;
+      const r = h(call, params);
+      const isObj = typeof r === "object" && r !== null;
+      const keys = isObj ? Object.keys(r) : [];
+      const wrapped = keys.length > 0 && keys.every((k) => k === "status" || k === "body");
+      const resObj = r as { status?: number; body?: unknown } | undefined;
+      const status = wrapped ? (resObj?.status ?? 200) : 200;
+      const body = wrapped ? resObj?.body : r;
       return new Response(status === 204 ? null : JSON.stringify(body ?? null), {
         status, headers: { "content-type": "application/json" },
       });
