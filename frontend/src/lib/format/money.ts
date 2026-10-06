@@ -11,21 +11,25 @@ const group = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
  */
 export function formatMicroUsd(v: number | null | undefined): string {
   if (v === null || v === undefined || !Number.isFinite(v)) return EM_DASH;
-  const sign = v < 0 ? "-" : "";
+  const rawSign = v < 0 ? "-" : "";
   const a = Math.abs(Math.trunc(v));
   if (a < 1_000_000) {
     const c = divRound(a, 100); // 1e-4 USD units
-    if (c >= 10_000) return `${sign}$1.00`;
+    if (c >= 10_000) return `${rawSign}$1.00`;
+    const sign = c === 0 ? "" : rawSign;
     return `${sign}$0.${String(c).padStart(4, "0")}`;
   }
   const cents = divRound(a, 10_000);
+  const sign = cents === 0 ? "" : rawSign;
   return `${sign}$${group(Math.floor(cents / 100))}.${String(cents % 100).padStart(2, "0")}`;
 }
 
 /** Integer token count -> "1,234,567"; null -> "—". */
 export function formatTokens(v: number | null | undefined): string {
   if (v === null || v === undefined || !Number.isFinite(v)) return EM_DASH;
-  return (v < 0 ? "-" : "") + group(Math.abs(Math.trunc(v)));
+  const truncated = Math.abs(Math.trunc(v));
+  const sign = truncated === 0 ? "" : v < 0 ? "-" : "";
+  return sign + group(truncated);
 }
 
 /** Compact tokens for axes: 1.2K, 3.4M, 5.6B; null -> "—". */
@@ -46,15 +50,17 @@ export function formatTokensCompact(v: number | null | undefined): string {
       return `${s}${val}${u}`;
     }
   }
-  return s + String(Math.trunc(a));
+  const truncated = Math.trunc(a);
+  const sign = truncated === 0 ? "" : s;
+  return sign + String(truncated);
 }
 
 /** permille (0..1000) -> "87.5%"; null -> "—". */
 export function formatPermille(v: number | null | undefined): string {
   if (v === null || v === undefined || !Number.isFinite(v)) return EM_DASH;
   const t = Math.round(v);
-  const sign = t < 0 ? "-" : "";
   const abs = Math.abs(t);
+  const sign = abs === 0 ? "" : t < 0 ? "-" : "";
   const integerPart = Math.floor(abs / 10);
   const fraction = abs % 10;
   return `${sign}${integerPart}${fraction ? "." + fraction : ""}%`;
