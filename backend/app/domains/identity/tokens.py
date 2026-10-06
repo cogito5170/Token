@@ -48,6 +48,8 @@ def decode_access(secret: str, token: str, now: int | None = None) -> dict:
         if json.loads(_unb64(head)).get("alg") != "HS256":
             raise TokenError("bad alg")
         claims = json.loads(_unb64(body))
+        if not isinstance(claims, dict):
+            raise TokenError("malformed token")
     except TokenError:
         raise
     except Exception as e:
