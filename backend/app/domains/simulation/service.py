@@ -90,7 +90,7 @@ def validate(assumptions, basis) -> tuple[list[dict], dict]:
 
 def beta_quantiles_permille(successes: int, n: int) -> tuple[int, int, int]:
     """P10 / P50 / P90 (permille) of Beta(s+1, n-s+1) (Laplace) by normal approximation; thin evidence is wide."""
-    a, b = successes + 1, n - successes
+    a, b = successes + 1, n - successes + 1
     mean = a / (a + b)
     sd = math.sqrt(a * b / ((a + b) ** 2 * (a + b + 1)))
     q = lambda x: max(0, min(1000, round(x * 1000)))  # noqa: E731
