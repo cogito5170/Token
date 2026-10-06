@@ -46,7 +46,15 @@ def drop_bodies(data, store_bodies: bool = False):
         return data
     if store_bodies:
         return scrub_value(data)
-    return {k: drop_bodies(v) if isinstance(v, dict) else v for k, v in data.items() if k not in BODY_KEYS}
+
+    def _drop(v):
+        if isinstance(v, dict):
+            return {k: _drop(sub) for k, sub in v.items() if k not in BODY_KEYS}
+        if isinstance(v, list):
+            return [_drop(item) for item in v]
+        return v
+
+    return _drop(data)
 
 
 def to_dt(v) -> tuple[datetime, str]:
