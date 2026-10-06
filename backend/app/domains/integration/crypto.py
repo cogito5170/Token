@@ -45,7 +45,7 @@ class Sealed:
 
 
 def kek_env_name(kek_id: str) -> str:
-    if not isinstance(kek_id, str) or not KEK_ID_RE.match(kek_id):
+    if not isinstance(kek_id, str) or not KEK_ID_RE.fullmatch(kek_id):
         raise KeyUnavailable("kek id malformed")
     return KEK_ENV_PREFIX + kek_id
 
