@@ -11,13 +11,15 @@ const group = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
  */
 export function formatMicroUsd(v: number | null | undefined): string {
   if (v === null || v === undefined || !Number.isFinite(v)) return EM_DASH;
-  const sign = v < 0 ? "-" : "";
   const a = Math.abs(Math.trunc(v));
   if (a < 1_000_000) {
     const c = divRound(a, 100); // 1e-4 USD units
+    if (c === 0) return "$0.0000";
+    const sign = v < 0 ? "-" : "";
     if (c >= 10_000) return `${sign}$1.00`;
     return `${sign}$0.${String(c).padStart(4, "0")}`;
   }
+  const sign = v < 0 ? "-" : "";
   const cents = divRound(a, 10_000);
   return `${sign}$${group(Math.floor(cents / 100))}.${String(cents % 100).padStart(2, "0")}`;
 }
@@ -25,7 +27,9 @@ export function formatMicroUsd(v: number | null | undefined): string {
 /** Integer token count -> "1,234,567"; null -> "—". */
 export function formatTokens(v: number | null | undefined): string {
   if (v === null || v === undefined || !Number.isFinite(v)) return EM_DASH;
-  return (v < 0 ? "-" : "") + group(Math.abs(Math.trunc(v)));
+  const a = Math.abs(Math.trunc(v));
+  if (a === 0) return "0";
+  return (v < 0 ? "-" : "") + group(a);
 }
 
 /** Compact tokens for axes: 1.2K, 3.4M, 5.6B; null -> "—". */
