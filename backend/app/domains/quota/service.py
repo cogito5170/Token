@@ -116,10 +116,16 @@ class QuotaService:
     # -- budgets ---------------------------------------------------------------------------------------------
     def create(self, ws: str, actor: str | None, scope: str, period: str, measure: str, limit_microusd: int,
                project_id: str | None = None, thresholds=None, action_at_limit: str = "alert") -> Budget:
-        th = sorted(set(thresholds if thresholds else DEFAULT_THRESHOLDS))
+        raw_th = thresholds if thresholds else DEFAULT_THRESHOLDS
+        try:
+            if any(not isinstance(t, int) or isinstance(t, bool) for t in raw_th):
+                raise QuotaError("invalid_request", "invalid budget", 422)
+            th = sorted(set(raw_th))
+        except TypeError:
+            raise QuotaError("invalid_request", "invalid budget", 422)
         bad = (scope not in SCOPES or period not in PERIODS or measure not in MEASURES
                or action_at_limit not in ACTIONS or not isinstance(limit_microusd, int) or limit_microusd < 1
-               or any(not isinstance(t, int) or not 1 <= t <= 100 for t in th)
+               or any(not 1 <= t <= 100 for t in th)
                or (scope == "project" and not project_id) or (scope != "project" and project_id)
                or (scope == "task") != (period == "task"))
         if bad:
